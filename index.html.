@@ -1,0 +1,1912 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Studio Créatif Pro v8 — Cou couvert, Pro, 2K/4K</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+        --bg: #fafafa; --panel: #ffffff; --panel-2: #f5f5f5; --border: #e5e5e5;
+        --ink: #1a1a1a; --ink-dim: #777; --ink-faint: #aaa;
+        --success: #2d8a4e; --error: #c0392b; --warn: #d4a017; --info: #4a6cf7;
+        --purple: #7c3aed;
+        --radius: 12px;
+    }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        background: var(--bg); color: var(--ink); min-height: 100vh;
+        padding: 1.5rem 1rem 6rem; font-size: 15px; line-height: 1.5;
+        max-width: 900px; margin: 0 auto;
+    }
+    header { margin-bottom: 1.5rem; text-align: center; }
+    h1 { font-size: 1.4rem; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 0.3rem; }
+    .subtitle { font-size: 0.8rem; color: var(--ink-dim); font-style: italic; }
+
+    .toast {
+        position: fixed; top: 1.5rem; left: 50%;
+        transform: translateX(-50%) translateY(-100px);
+        background: var(--ink); color: #fff;
+        padding: 0.85rem 1.4rem; border-radius: 10px;
+        font-size: 0.85rem; font-weight: 500;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        z-index: 1000; opacity: 0;
+        transition: transform 0.35s ease, opacity 0.35s ease;
+        max-width: 90vw; text-align: center;
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--error); }
+    .toast.warn { background: var(--warn); }
+    .toast .toast-icon { font-size: 1rem; }
+
+    .info-banner {
+        background: #eef4ff; border-left: 3px solid var(--info);
+        padding: 0.75rem 0.95rem; border-radius: 8px;
+        font-size: 0.78rem; color: #2a3a5c;
+        margin-bottom: 1rem; line-height: 1.45;
+    }
+
+    .tabs {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.3rem;
+        margin-bottom: 1rem; background: var(--panel); border-radius: var(--radius);
+        padding: 0.3rem; border: 1px solid var(--border);
+    }
+    .tab {
+        padding: 0.65rem 0.4rem; border-radius: 8px;
+        text-align: center; cursor: pointer; user-select: none;
+        transition: all 0.2s; font-weight: 600; color: var(--ink-dim);
+    }
+    .tab.active { background: var(--ink); color: #fff; }
+    .tab .tab-emoji { font-size: 1.15rem; display: block; margin-bottom: 0.1rem; }
+    .tab .tab-name { font-size: 0.62rem; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .mode-selector {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .mode-btn {
+        padding: 0.9rem 0.8rem; border-radius: var(--radius);
+        border: 2px solid var(--border); background: var(--panel);
+        cursor: pointer; text-align: center; transition: all 0.2s;
+    }
+    .mode-btn.selected { border-color: var(--ink); background: var(--ink); color: #fff; }
+    .mode-btn .mode-emoji { font-size: 1.6rem; display: block; margin-bottom: 0.2rem; }
+    .mode-btn .mode-name { font-size: 0.85rem; font-weight: 600; }
+    .mode-btn .mode-desc { font-size: 0.65rem; opacity: 0.7; margin-top: 0.1rem; }
+
+    .section {
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: var(--radius); margin-bottom: 1rem; overflow: hidden;
+    }
+    .section-header {
+        padding: 0.9rem 1.1rem; cursor: pointer;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .section-header:active { background: var(--panel-2); }
+    .section-title {
+        font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
+        color: var(--ink-dim); font-weight: 600;
+    }
+    .section-title .badge {
+        display: inline-block; margin-left: 0.4rem; padding: 0.1rem 0.4rem;
+        background: var(--ink); color: #fff; border-radius: 10px;
+        font-size: 0.65rem;
+    }
+    .section-title .badge.pro { background: var(--purple); }
+    .section-title .badge.priority { background: var(--error); }
+    .section-header .chevron { font-size: 0.7rem; color: var(--ink-faint); transition: transform 0.2s; }
+    .section.open .section-header .chevron { transform: rotate(180deg); }
+    .section-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .section.open .section-body { max-height: 10000px; }
+    .section-content { padding: 0 1.1rem 1.1rem; }
+
+    .api-panel {
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: var(--radius); padding: 1rem 1.2rem;
+        margin-bottom: 1rem;
+    }
+    .api-panel.ok { border-color: var(--success); }
+    .api-key-input {
+        width: 100%; padding: 0.85rem 1rem;
+        border-radius: 8px; border: 1px solid var(--border);
+        background: #fafafa; color: var(--ink);
+        font-family: ui-monospace, monospace;
+        font-size: 0.85rem; margin-bottom: 0.6rem;
+    }
+    .api-save-btn {
+        width: 100%; padding: 0.8rem; border-radius: 8px; border: none;
+        background: var(--ink); color: #fff; font-size: 0.9rem;
+        font-weight: 600; font-family: inherit; cursor: pointer;
+        margin-bottom: 0.6rem;
+    }
+    .api-status-line {
+        font-size: 0.75rem; padding: 0.55rem 0.85rem;
+        border-radius: 6px; margin-bottom: 0.5rem;
+        display: flex; align-items: center; gap: 0.5rem;
+        background: var(--panel-2); color: var(--ink-dim);
+    }
+    .api-status-line.ok { background: #e3f5e9; color: var(--success); font-weight: 600; }
+    .api-status-line .status-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: var(--ink-faint); flex-shrink: 0;
+    }
+    .api-status-line.ok .status-dot { background: var(--success); }
+    .api-hint { font-size: 0.72rem; color: var(--ink-dim); margin-top: 0.4rem; line-height: 1.5; }
+    .api-hint a { color: var(--ink); text-decoration: underline; }
+
+    .upload-zone {
+        border: 2px dashed var(--border); border-radius: var(--radius);
+        padding: 2rem 1rem; text-align: center; cursor: pointer;
+        margin-bottom: 1rem; background: var(--panel);
+    }
+    .upload-zone:active { border-color: var(--ink); background: #f5f5f5; }
+    .upload-zone input[type="file"] { display: none; }
+    .upload-icon { font-size: 2.2rem; margin-bottom: 0.6rem; opacity: 0.6; }
+    .upload-text { font-size: 0.95rem; margin-bottom: 0.2rem; }
+    .upload-hint { font-size: 0.75rem; color: var(--ink-dim); }
+
+    .images-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 0.5rem; margin-bottom: 1rem;
+    }
+    .image-card {
+        position: relative; border-radius: 8px; overflow: hidden;
+        border: 1px solid var(--border); background: #f0f0f0;
+        aspect-ratio: 9/16;
+    }
+    .image-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .image-card .remove-btn {
+        position: absolute; top: 4px; right: 4px;
+        background: rgba(0,0,0,0.7); color: #fff; border: none;
+        width: 26px; height: 26px; border-radius: 50%; font-size: 13px;
+        cursor: pointer; font-weight: bold;
+    }
+
+    .textarea {
+        width: 100%; padding: 0.85rem 1rem;
+        border-radius: 8px; border: 1px solid var(--border);
+        background: #fafafa; color: var(--ink);
+        font-family: inherit; font-size: 0.9rem;
+        min-height: 100px; resize: vertical; line-height: 1.5;
+    }
+    .textarea:focus { outline: none; border-color: var(--ink); }
+    .textarea-hint { font-size: 0.72rem; color: var(--ink-dim); margin-top: 0.5rem; line-height: 1.4; }
+
+    .prompt-presets { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.7rem; }
+    .prompt-preset {
+        padding: 0.35rem 0.7rem; border-radius: 16px;
+        border: 1px solid var(--border); background: var(--panel-2);
+        font-size: 0.72rem; cursor: pointer;
+    }
+    .prompt-preset:active { transform: scale(0.96); }
+
+    .styles-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.5rem;
+    }
+    .style-card {
+        padding: 0.7rem 0.8rem; border-radius: 8px;
+        border: 1px solid var(--border); background: var(--panel-2);
+        cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .style-card.selected { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .style-card .style-emoji { font-size: 1.2rem; }
+    .style-card .style-name { font-size: 0.78rem; font-weight: 500; }
+    .style-card .style-desc { font-size: 0.62rem; opacity: 0.65; }
+    .style-category-header {
+        grid-column: 1 / -1; font-size: 0.7rem; font-weight: 600;
+        color: var(--ink-dim); text-transform: uppercase;
+        letter-spacing: 0.08em; padding: 0.6rem 0 0.3rem;
+        border-bottom: 1px solid var(--border); margin-bottom: 0.3rem;
+    }
+    .no-style-card {
+        grid-column: 1 / -1; padding: 0.8rem 1rem;
+        border-radius: 8px; border: 2px dashed var(--border);
+        text-align: center; cursor: pointer; font-size: 0.82rem; color: var(--ink-dim);
+    }
+    .no-style-card.selected { border-color: var(--ink); border-style: solid; background: var(--panel-2); color: var(--ink); font-weight: 600; }
+
+    .control-row { margin-bottom: 0.9rem; }
+    .control-label {
+        display: block; font-size: 0.72rem; color: var(--ink-dim);
+        margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.06em;
+        font-weight: 600;
+    }
+    .control-label.critical { color: var(--error); font-weight: 700; }
+    select {
+        width: 100%; padding: 0.7rem 0.9rem; border-radius: 8px;
+        border: 1px solid var(--border); background: #fafafa;
+        color: var(--ink); font-family: inherit; font-size: 0.88rem;
+        -webkit-appearance: none; appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%231a1a1a' d='M0 0l5 6 5-6z'/></svg>");
+        background-repeat: no-repeat; background-position: right 0.9rem center; background-size: 10px;
+    }
+    input[type="text"] {
+        width: 100%; padding: 0.7rem 0.9rem; border-radius: 8px;
+        border: 1px solid var(--border); background: #fafafa;
+        color: var(--ink); font-family: inherit; font-size: 0.88rem;
+    }
+    input[type="text"]:focus, select:focus { outline: none; border-color: var(--ink); }
+
+    .btn-primary {
+        width: 100%; padding: 1.1rem; border-radius: var(--radius);
+        border: none; background: var(--ink); color: #fff;
+        font-size: 1rem; font-weight: 600; font-family: inherit;
+        cursor: pointer; margin-bottom: 1rem;
+    }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn-purple { background: var(--purple); }
+    .btn-stop {
+        width: 100%; padding: 0.8rem; border-radius: var(--radius);
+        border: 1px solid var(--border); background: var(--panel);
+        color: var(--error); font-size: 0.85rem; font-weight: 600;
+        font-family: inherit; cursor: pointer; margin-bottom: 1rem;
+        display: none;
+    }
+    .btn-stop.visible { display: block; }
+
+    .queue { margin-top: 1rem; }
+    .queue-item {
+        display: flex; align-items: center; gap: 0.8rem;
+        padding: 0.7rem 0.8rem; border-radius: 8px;
+        border: 1px solid var(--border); margin-bottom: 0.4rem;
+        background: var(--panel); font-size: 0.82rem;
+    }
+    .queue-item.pending { opacity: 0.5; }
+    .queue-item.creating { border-color: var(--warn); }
+    .queue-item.processing { border-color: var(--ink); }
+    .queue-item.done { border-color: var(--success); }
+    .queue-item.failed { border-color: var(--error); }
+    .queue-item.timeout { border-color: var(--warn); }
+    .queue-item .q-icon { font-size: 1rem; width: 1.5rem; text-align: center; }
+    .queue-item .q-name { flex: 1; }
+    .queue-item .q-status { font-size: 0.72rem; color: var(--ink-dim); text-align: right; }
+
+    .gallery { margin-top: 1rem; }
+    .gallery-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.8rem;
+    }
+    .gallery-item {
+        position: relative;
+        border-radius: var(--radius); overflow: hidden;
+        border: 1px solid var(--border); background: #000;
+    }
+    .gallery-item video, .gallery-item img { width: 100%; display: block; aspect-ratio: 9/16; object-fit: cover; }
+    .gallery-item .g-caption {
+        padding: 0.4rem 0.6rem; background: var(--panel);
+        font-size: 0.7rem; color: var(--ink-dim);
+    }
+    .gallery-item .g-remove {
+        position: absolute; top: 6px; right: 6px;
+        background: rgba(192,57,43,0.9); color: #fff; border: none;
+        width: 28px; height: 28px; border-radius: 50%;
+        font-size: 14px; font-weight: bold; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        z-index: 2;
+    }
+    .gallery-item .g-download {
+        position: absolute; top: 6px; left: 6px;
+        background: rgba(45,138,78,0.9); color: #fff;
+        width: 28px; height: 28px; border-radius: 50%;
+        font-size: 13px; cursor: pointer; text-decoration: none;
+        display: flex; align-items: center; justify-content: center;
+        z-index: 2;
+    }
+
+    .story-preview {
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: var(--radius); padding: 1rem 1.1rem;
+        margin-top: 1rem;
+    }
+    .story-title-input {
+        width: 100%; padding: 0.7rem 0.9rem; border-radius: 8px;
+        border: 1px solid var(--border); background: #fafafa;
+        font-size: 0.95rem; font-weight: 600; margin-bottom: 0.8rem;
+    }
+    .story-scene {
+        background: var(--panel-2); border-radius: 8px;
+        padding: 0.75rem 0.9rem; margin-bottom: 0.6rem;
+        border-left: 3px solid var(--purple);
+    }
+    .story-scene .scene-num {
+        font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+        color: var(--purple); letter-spacing: 0.06em; margin-bottom: 0.3rem;
+    }
+    .story-scene .scene-desc { font-size: 0.82rem; line-height: 1.45; margin-bottom: 0.4rem; }
+    .story-scene .scene-narration {
+        font-size: 0.75rem; font-style: italic;
+        color: var(--ink-dim); line-height: 1.4;
+        padding-top: 0.3rem; border-top: 1px solid var(--border);
+    }
+    .story-scene img {
+        width: 100%; border-radius: 6px; margin-top: 0.5rem;
+        max-height: 200px; object-fit: cover;
+    }
+    .story-scene .scene-actions { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
+    .story-scene .scene-actions button {
+        flex: 1; padding: 0.4rem; border-radius: 6px;
+        border: 1px solid var(--border); background: var(--panel);
+        font-size: 0.7rem; font-family: inherit; cursor: pointer;
+        color: var(--ink-dim);
+    }
+
+    .progress-bar {
+        width: 100%; height: 6px; background: var(--panel-2);
+        border-radius: 3px; overflow: hidden; margin-top: 0.5rem;
+    }
+    .progress-bar .fill {
+        height: 100%; background: var(--purple);
+        transition: width 0.3s; width: 0%;
+    }
+
+    .status-bar {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background: var(--ink); color: #fff; padding: 0.7rem 1rem;
+        font-size: 0.78rem; display: flex; align-items: center; gap: 0.6rem;
+        transform: translateY(100%); transition: transform 0.3s;
+        z-index: 100;
+    }
+    .status-bar.visible { transform: translateY(0); }
+    .status-bar .spinner {
+        width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: #fff; border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Studio Créatif Pro v8</h1>
+    <p class="subtitle">Cou couvert • Pro • 2K/4K • Timeout corrigé</p>
+</header>
+
+<div class="info-banner">
+    <strong>NOUVEAU :</strong> Option <strong>« Cou couvert »</strong> (3 variantes) + Contexte <strong>« Professionnel »</strong> +
+    Qualité <strong>2K / 4K</strong>. Bug de timeout vidéo corrigé.
+</div>
+
+<div class="tabs">
+    <div class="tab active" data-tab="tab-image">
+        <span class="tab-emoji">🖼️</span>
+        <div class="tab-name">Images IA</div>
+    </div>
+    <div class="tab" data-tab="tab-story">
+        <span class="tab-emoji">📖</span>
+        <div class="tab-name">Histoire</div>
+    </div>
+    <div class="tab" data-tab="tab-video">
+        <span class="tab-emoji">🎬</span>
+        <div class="tab-name">Vidéo IA</div>
+    </div>
+    <div class="tab" data-tab="tab-gallery">
+        <span class="tab-emoji">📁</span>
+        <div class="tab-name">Galerie</div>
+    </div>
+</div>
+
+<div class="api-panel" id="api-panel">
+    <input type="password" class="api-key-input" id="api-key-input"
+           placeholder="Clé API Agnes (sk-...) — pour vidéos IA uniquement" autocomplete="off" spellcheck="false">
+    <button type="button" class="api-save-btn" id="api-save-btn">Enregistrer la clé Agnes</button>
+    <div class="api-status-line" id="api-status-line">
+        <span class="status-dot"></span>
+        <span id="api-status-text">Aucune clé API enregistrée</span>
+    </div>
+    <div class="api-hint">
+        ℹ️ <strong>Images :</strong> Pollinations.ai (gratuit, aucune clé)<br>
+        ℹ️ <strong>Vidéos IA :</strong> nécessite une clé <a href="https://platform.agnes-ai.com" target="_blank">agnes-ai.com</a>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- ONGLET IMAGES IA -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="tab-panel active" id="tab-image">
+    <div class="section open">
+        <div class="section-header" data-toggle="img-prompt-section">
+            <span class="section-title">🎨 Décrivez votre image</span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <textarea class="textarea" id="img-prompt"
+                    placeholder="Décrivez l'image que vous voulez créer. Préférez l'ANGLAIS et des mots-clés COURTS."></textarea>
+                <div class="prompt-presets" id="img-presets"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section open">
+        <div class="section-header" data-toggle="section-identity-img">
+            <span class="section-title">👤 Race & Origine</span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <div class="control-row">
+                    <label class="control-label">Race / Origine</label>
+                    <select id="img-race">
+                        <option value="">— Non précisé —</option>
+                        <option value="Arab Middle-Eastern woman, olive skin, dark hair, dark eyes">Arabe / Moyen-Orient</option>
+                        <option value="East Asian woman, pale skin, black hair, almond eyes">Asiatique (Est)</option>
+                        <option value="Southeast Asian woman, warm skin tone, dark hair">Asiatique (Sud-Est)</option>
+                        <option value="South Asian Indian woman, warm brown skin, dark hair">Indienne / Sud-Asiatique</option>
+                        <option value="European Caucasian woman, fair skin, light hair">Européenne / Caucasienne</option>
+                        <option value="African Black woman, dark skin, natural hair">Africaine / Afro</option>
+                        <option value="Latina Hispanic woman, warm olive skin, dark hair">Latino / Hispanique</option>
+                        <option value="Mixed race woman, mixed features">Métis</option>
+                        <option value="Maghrebi North African woman, olive skin, dark hair">Maghrébine</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section open">
+        <div class="section-header" data-toggle="section-outfit-img">
+            <span class="section-title">👔 Tenue & Apparence <span class="badge priority">PRIORITÉ</span></span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <div class="control-row">
+                    <label class="control-label critical">🔘 ÉTAT DES BOUTONS</label>
+                    <select id="outfit-buttons">
+                        <option value="">— Non précisé —</option>
+                        <option value="ALL buttons of the shirt are attached, EVERY button closed including the last bottom button, fully buttoned from top to bottom, no button undone">✅ TOUS ATTACHÉS (y compris dernier bouton)</option>
+                        <option value="All buttons attached EXCEPT the very last bottom button which is open">Tous attachés SAUF le dernier en bas</option>
+                        <option value="All buttons attached except the top two buttons, collar open">Tous attachés SAUF les 2 du haut</option>
+                        <option value="Shirt half-open, middle buttons undone">Chemise à moitié ouverte</option>
+                        <option value="Shirt completely open">Entièrement ouverte</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label critical">👔 COL & COU (couvert)</label>
+                    <select id="outfit-collar">
+                        <option value="">— Non précisé —</option>
+                        <option value="collar button CLOSED, collar raised high up to the chin, entire neck COMPLETELY COVERED by the collar fabric, no skin visible on the neck, neck fully covered and protected">✅ Cou entièrement couvert par le col</option>
+                        <option value="neck fully COVERED by the shirt fabric, collar closed, no skin visible on the neck, neck wrapped in the collar">✅ Cou recouvert par le tissu du col</option>
+                        <option value="neck PROTECTED and COVERED, no visible skin on the neck, collar closed, neck wrapped and hidden by the collar">✅ Cou protégé, recouvert, aucune peau visible</option>
+                        <option value="turtleneck sweater, neck fully COVERED, no skin visible on neck">✅ Col roulé (cou entièrement couvert)</option>
+                        <option value="Mandarin collar, high standing collar COVERING most of the neck">Col Mao / Mandarin</option>
+                        <option value="standing collar, neck partially COVERED">Col montant</option>
+                        <option value="collar button closed, collar standing up, neck partially visible">Col fermé, cou partiellement visible</option>
+                        <option value="collar open, top button undone, neck visible">Col ouvert, cou visible</option>
+                        <option value="collar wide open, deep V-neck">Col grand ouvert</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label">👔 Cravate / Nœud</label>
+                    <select id="outfit-tie">
+                        <option value="">— Aucune —</option>
+                        <option value="wearing a classical silk necktie, tightly knotted at the collar">Cravate classique serrée</option>
+                        <option value="wearing a silk necktie slightly loosened at the collar">Cravate desserrée</option>
+                        <option value="wearing a slim thin necktie">Cravate fine</option>
+                        <option value="wearing a black silk bow tie">Nœud papillon</option>
+                        <option value="wearing a large flowing lavallière tied at the neck">Lavallière</option>
+                        <option value="wearing a silk ascot cravat tucked into the shirt">Ascot</option>
+                        <option value="no tie">Sans cravate</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label">👕 Haut</label>
+                    <select id="outfit-top">
+                        <option value="">— Non précisé —</option>
+                        <option value="classic white button-up shirt">Chemise blanche classique</option>
+                        <option value="classic black button-up shirt">Chemise noire</option>
+                        <option value="blue button-up shirt">Chemise bleue</option>
+                        <option value="striped button-up shirt">Chemise rayée</option>
+                        <option value="turtleneck sweater">Col roulé</option>
+                        <option value="simple white t-shirt">T-shirt blanc</option>
+                        <option value="polo shirt">Polo</option>
+                        <option value="cashmere sweater">Pull cachemire</option>
+                        <option value="kimono traditional Japanese">Kimono</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label">🧥 Veste / Complet</label>
+                    <select id="outfit-jacket">
+                        <option value="">— Non précisé —</option>
+                        <option value="three-piece suit with matching waistcoat">Costume 3 pièces</option>
+                        <option value="two-piece dark suit">Costume 2 pièces</option>
+                        <option value="women's tailored suit">Tailleur femme</option>
+                        <option value="classic dark navy blazer">Blazer bleu marine</option>
+                        <option value="classic black blazer">Blazer noir</option>
+                        <option value="leather jacket">Veste en cuir</option>
+                        <option value="wool coat">Manteau en laine</option>
+                        <option value="medical white coat">Blouse médicale</option>
+                        <option value="military uniform">Uniforme militaire</option>
+                        <option value="school uniform">Uniforme scolaire</option>
+                        <option value="no jacket">Sans veste</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label">👖 Bas</label>
+                    <select id="outfit-bottom">
+                        <option value="">— Non précisé —</option>
+                        <option value="formal dark trousers">Pantalon de costume foncé</option>
+                        <option value="dark jeans">Jean foncé</option>
+                        <option value="black pencil skirt">Jupe crayon noire</option>
+                        <option value="formal long skirt">Jupe longue</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label">👓 Accessoires</label>
+                    <select id="outfit-accessories">
+                        <option value="">— Non précisé —</option>
+                        <option value="wearing elegant glasses">Lunettes élégantes</option>
+                        <option value="wearing sunglasses">Lunettes de soleil</option>
+                        <option value="wearing a watch">Montre</option>
+                        <option value="no accessories">Aucun accessoire</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label">🏢 Contexte</label>
+                    <select id="outfit-context">
+                        <option value="">— Non précisé —</option>
+                        <option value="professional studio photography, professional lighting, editorial quality, corporate portrait">✅ Professionnel — Studio pro</option>
+                        <option value="corporate business portrait, professional office, clean background, editorial magazine style">✅ Professionnel — Corporate</option>
+                        <option value="magazine editorial photography, high-end professional retouching, Vogue style">✅ Professionnel — Éditorial magazine</option>
+                        <option value="modern office desk, professional environment">Bureau moderne</option>
+                        <option value="plain dark studio background">Fond studio neutre</option>
+                        <option value="outdoor urban environment">Extérieur urbain</option>
+                        <option value="natural landscape background">Paysage naturel</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section open">
+        <div class="section-header" data-toggle="img-options-section">
+            <span class="section-title">⚙️ Options</span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <div class="control-row">
+                    <label class="control-label">Modèle IA</label>
+                    <select id="img-model">
+                        <option value="flux" selected>⚡ Flux (recommandé)</option>
+                        <option value="flux-realism">📸 Flux Realism</option>
+                        <option value="turbo">🚀 Turbo (rapide)</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label class="control-label">Nombre d'images</label>
+                    <select id="img-count">
+                        <option value="1">1 image</option>
+                        <option value="2">2 images</option>
+                        <option value="4" selected>4 images</option>
+                        <option value="6">6 images</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label class="control-label">Format</label>
+                    <select id="img-format">
+                        <option value="portrait" selected>Portrait 9:16</option>
+                        <option value="square">Carré 1:1</option>
+                        <option value="landscape">Paysage 16:9</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label class="control-label">Qualité</label>
+                    <select id="img-quality">
+                        <option value="standard">Standard (rapide)</option>
+                        <option value="high" selected>HD 2K (recommandé)</option>
+                        <option value="ultra">Ultra HD 4K (lent)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" class="btn-primary btn-purple" id="img-generate-btn">🎨 Générer les images</button>
+    <button type="button" class="btn-stop" id="img-stop-btn">⏹ Arrêter</button>
+
+    <div id="img-results" class="gallery" style="display:none;">
+        <div class="section-title" style="margin-bottom:0.8rem;">Images générées</div>
+        <div class="gallery-grid" id="img-results-grid"></div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- ONGLET HISTOIRE -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-story">
+    <div class="section open">
+        <div class="section-header" data-toggle="story-mode-section">
+            <span class="section-title">🎭 Mode de création</span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <div class="mode-selector">
+                    <div class="mode-btn selected" id="story-mode-keywords" data-mode="keywords">
+                        <span class="mode-emoji">🔑</span>
+                        <div class="mode-name">Mots-clés</div>
+                        <div class="mode-desc">L'IA développe</div>
+                    </div>
+                    <div class="mode-btn" id="story-mode-prompt" data-mode="prompt">
+                        <span class="mode-emoji">✍️</span>
+                        <div class="mode-name">Prompt libre</div>
+                        <div class="mode-desc">Tu écris tout</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section open" id="story-keywords-section">
+        <div class="section-header" data-toggle="story-keywords-section">
+            <span class="section-title">🔑 Vos mots-clés</span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <textarea class="textarea" id="story-keywords" placeholder="dragon, petite fille, forêt, amitié, aventure"></textarea>
+                <div class="prompt-presets" id="story-keywords-presets"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section open hidden" id="story-prompt-section">
+        <div class="section-header" data-toggle="story-prompt-section">
+            <span class="section-title">✍️ Votre prompt complet</span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <textarea class="textarea" id="story-prompt-custom" placeholder="Écrivez votre histoire complète..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="section open">
+        <div class="section-header" data-toggle="story-options-section">
+            <span class="section-title">⚙️ Options de l'histoire</span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <div class="control-row">
+                    <label class="control-label">Nombre de scènes</label>
+                    <select id="story-scenes-count">
+                        <option value="3">3 scènes</option>
+                        <option value="5" selected>5 scènes</option>
+                        <option value="8">8 scènes</option>
+                        <option value="10">10 scènes</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label class="control-label">Style visuel</label>
+                    <select id="story-style">
+                        <option value="anime style, Studio Ghibli, hand-painted watercolor backgrounds" selected>Anime Ghibli</option>
+                        <option value="Pixar 3D animation style, expressive characters">Pixar 3D</option>
+                        <option value="cinematic Hollywood film, dramatic lighting, 35mm film grain">Cinéma Hollywood</option>
+                        <option value="watercolor children's book illustration">Aquarelle livre enfant</option>
+                        <option value="photorealistic, ultra detailed, 8k">Réaliste</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" class="btn-primary btn-purple" id="story-generate-btn">📖 Créer l'histoire</button>
+    <button type="button" class="btn-stop" id="story-stop-btn">⏹ Arrêter</button>
+
+    <div class="story-preview hidden" id="story-preview">
+        <input type="text" class="story-title-input" id="story-title" placeholder="Titre de l'histoire">
+        <div id="story-scenes-list"></div>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+            <button type="button" class="btn-primary" id="story-export-video" style="margin:0; flex:1;">🎬 Exporter la vidéo</button>
+            <button type="button" class="btn-primary" id="story-regenerate-images" style="margin:0; flex:1; background: var(--panel-2); color: var(--ink); border: 1px solid var(--border);">🔄 Regénérer les images</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- ONGLET VIDÉO IA -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-video">
+    <div class="mode-selector">
+        <div class="mode-btn selected" id="mode-btn-image" data-mode="image">
+            <span class="mode-emoji">🖼️</span>
+            <div class="mode-name">Image</div>
+            <div class="mode-desc">Animer une photo</div>
+        </div>
+        <div class="mode-btn" id="mode-btn-text" data-mode="text">
+            <span class="mode-emoji">✍️</span>
+            <div class="mode-name">Texte</div>
+            <div class="mode-desc">Créer de zéro</div>
+        </div>
+    </div>
+
+    <div id="section-image">
+        <div class="upload-zone" id="upload-zone">
+            <input type="file" id="file-input" accept="image/*" multiple>
+            <div class="upload-icon">＋</div>
+            <div class="upload-text">Ajoutez vos images</div>
+            <div class="upload-hint">Appuyez sur ✕ pour supprimer</div>
+        </div>
+        <div class="images-grid" id="images-grid"></div>
+    </div>
+
+    <div id="section-text" class="hidden">
+        <div class="section open">
+            <div class="section-header" data-toggle="text-section-1">
+                <span class="section-title">✍️ Description</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="section-content">
+                    <textarea class="textarea" id="text-prompt" placeholder="Décrivez la vidéo..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section open">
+        <div class="section-header" data-toggle="section-identity-video">
+            <span class="section-title">👤 Race & Origine</span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <div class="control-row">
+                    <label class="control-label">Race / Origine</label>
+                    <select id="video-race">
+                        <option value="">— Non précisé —</option>
+                        <option value="Arab Middle-Eastern, olive skin, dark hair, dark eyes">Arabe / Moyen-Orient</option>
+                        <option value="East Asian, pale skin, black hair, almond eyes">Asiatique (Est)</option>
+                        <option value="Southeast Asian, warm skin tone, dark hair">Asiatique (Sud-Est)</option>
+                        <option value="South Asian Indian, warm brown skin, dark hair">Indienne / Sud-Asiatique</option>
+                        <option value="European Caucasian, fair skin, light hair">Européenne / Caucasienne</option>
+                        <option value="African Black, dark skin, natural hair">Africaine / Afro</option>
+                        <option value="Latina Hispanic, warm olive skin, dark hair">Latino / Hispanique</option>
+                        <option value="Mixed race, mixed features">Métis</option>
+                        <option value="Maghrebi North African, olive skin, dark hair">Maghrébine</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section open">
+        <div class="section-header" data-toggle="section-outfit-video">
+            <span class="section-title">👔 Tenue & Apparence <span class="badge priority">PRIORITÉ</span></span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <div class="control-row">
+                    <label class="control-label critical">🔘 ÉTAT DES BOUTONS</label>
+                    <select id="video-outfit-buttons">
+                        <option value="">— Non précisé —</option>
+                        <option value="ALL buttons of the shirt are attached, EVERY button closed including the last bottom button, fully buttoned from top to bottom">✅ TOUS ATTACHÉS (y compris dernier bouton)</option>
+                        <option value="All buttons attached EXCEPT the very last bottom button which is open">Tous attachés SAUF le dernier en bas</option>
+                        <option value="All buttons attached except the top two buttons, collar open">Tous attachés SAUF les 2 du haut</option>
+                        <option value="Shirt half-open, middle buttons undone">Chemise à moitié ouverte</option>
+                        <option value="Shirt completely open">Entièrement ouverte</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label critical">👔 COL & COU (couvert)</label>
+                    <select id="video-outfit-collar">
+                        <option value="">— Non précisé —</option>
+                        <option value="collar button CLOSED, collar raised high up to the chin, entire neck COMPLETELY COVERED by the collar fabric, no skin visible on the neck">✅ Cou entièrement couvert par le col</option>
+                        <option value="neck fully COVERED by the shirt fabric, collar closed, no skin visible on the neck">✅ Cou recouvert par le tissu du col</option>
+                        <option value="neck PROTECTED and COVERED, no visible skin on the neck, collar closed">✅ Cou protégé, recouvert, aucune peau visible</option>
+                        <option value="turtleneck sweater, neck fully COVERED, no skin visible on neck">✅ Col roulé (cou entièrement couvert)</option>
+                        <option value="Mandarin collar, high standing collar COVERING most of the neck">Col Mao / Mandarin</option>
+                        <option value="standing collar, neck partially COVERED">Col montant</option>
+                        <option value="collar button closed, collar standing up, neck partially visible">Col fermé, cou partiellement visible</option>
+                        <option value="collar open, top button undone, neck visible">Col ouvert, cou visible</option>
+                        <option value="collar wide open, deep V-neck">Col grand ouvert</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label">👔 Cravate / Nœud</label>
+                    <select id="video-outfit-tie">
+                        <option value="">— Aucune —</option>
+                        <option value="wearing a classical silk necktie, tightly knotted at the collar">Cravate classique serrée</option>
+                        <option value="wearing a silk necktie slightly loosened at the collar">Cravate desserrée</option>
+                        <option value="wearing a slim thin necktie">Cravate fine</option>
+                        <option value="wearing a black silk bow tie">Nœud papillon</option>
+                        <option value="wearing a large flowing lavallière tied at the neck">Lavallière</option>
+                        <option value="wearing a silk ascot cravat tucked into the shirt">Ascot</option>
+                        <option value="no tie">Sans cravate</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label">👕 Haut</label>
+                    <select id="video-outfit-top">
+                        <option value="">— Non précisé —</option>
+                        <option value="classic white button-up shirt">Chemise blanche classique</option>
+                        <option value="classic black button-up shirt">Chemise noire</option>
+                        <option value="blue button-up shirt">Chemise bleue</option>
+                        <option value="turtleneck sweater">Col roulé</option>
+                        <option value="simple white t-shirt">T-shirt blanc</option>
+                        <option value="polo shirt">Polo</option>
+                        <option value="cashmere sweater">Pull cachemire</option>
+                        <option value="kimono traditional Japanese">Kimono</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label">🧥 Veste / Complet</label>
+                    <select id="video-outfit-jacket">
+                        <option value="">— Non précisé —</option>
+                        <option value="three-piece suit with matching waistcoat">Costume 3 pièces</option>
+                        <option value="two-piece dark suit">Costume 2 pièces</option>
+                        <option value="women's tailored suit">Tailleur femme</option>
+                        <option value="classic dark navy blazer">Blazer bleu marine</option>
+                        <option value="classic black blazer">Blazer noir</option>
+                        <option value="leather jacket">Veste en cuir</option>
+                        <option value="wool coat">Manteau en laine</option>
+                        <option value="medical white coat">Blouse médicale</option>
+                        <option value="military uniform">Uniforme militaire</option>
+                        <option value="school uniform">Uniforme scolaire</option>
+                        <option value="no jacket">Sans veste</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label">👖 Bas</label>
+                    <select id="video-outfit-bottom">
+                        <option value="">— Non précisé —</option>
+                        <option value="formal dark trousers">Pantalon de costume foncé</option>
+                        <option value="dark jeans">Jean foncé</option>
+                        <option value="black pencil skirt">Jupe crayon noire</option>
+                        <option value="formal long skirt">Jupe longue</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label">👓 Accessoires</label>
+                    <select id="video-outfit-accessories">
+                        <option value="">— Non précisé —</option>
+                        <option value="wearing elegant glasses">Lunettes élégantes</option>
+                        <option value="wearing sunglasses">Lunettes de soleil</option>
+                        <option value="wearing a watch">Montre</option>
+                        <option value="no accessories">Aucun accessoire</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label class="control-label">🏢 Contexte</label>
+                    <select id="video-outfit-context">
+                        <option value="">— Non précisé —</option>
+                        <option value="professional studio photography, professional lighting, editorial quality">✅ Professionnel — Studio pro</option>
+                        <option value="corporate business portrait, professional office, clean background">✅ Professionnel — Corporate</option>
+                        <option value="magazine editorial photography, high-end professional retouching">✅ Professionnel — Éditorial magazine</option>
+                        <option value="modern office desk, professional environment">Bureau moderne</option>
+                        <option value="plain dark studio background">Fond studio neutre</option>
+                        <option value="outdoor urban environment">Extérieur urbain</option>
+                        <option value="natural landscape background">Paysage naturel</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section open">
+        <div class="section-header" data-toggle="section-prompt-img">
+            <span class="section-title">✍️ Direction artistique <span class="badge">optionnel</span></span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <textarea class="textarea" id="main-prompt" placeholder="Description détaillée de l'ambiance, du mouvement..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="section open">
+        <div class="section-header" data-toggle="section-style">
+            <span class="section-title">🎨 Style visuel <span class="badge">optionnel</span></span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <div class="styles-grid" id="styles-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-header" data-toggle="section-tech">
+            <span class="section-title">📷 Réglages</span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="section-body">
+            <div class="section-content">
+                <div class="control-row">
+                    <label class="control-label">Durée</label>
+                    <select id="duration-select">
+                        <option value="121">5 secondes</option>
+                        <option value="153" selected>6,4 secondes</option>
+                        <option value="241">10 secondes</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label class="control-label">Intensité du mouvement</label>
+                    <select id="intensity-select">
+                        <option value="random">Aléatoire</option>
+                        <option value="subtle" selected>Subtile</option>
+                        <option value="moderate">Modérée</option>
+                        <option value="strong">Forte</option>
+                    </select>
+                </div>
+                <div class="control-row" id="row-number-of-videos">
+                    <label class="control-label">Nombre de vidéos (mode texte)</label>
+                    <select id="count-select">
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" class="btn-primary" id="generate-btn" disabled>Créer les vidéos</button>
+    <button type="button" class="btn-stop" id="stop-btn">⏹ Arrêter</button>
+
+    <div class="queue" id="queue" style="display:none;"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- ONGLET GALERIE -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-gallery">
+    <div class="section open">
+        <div class="section-header">
+            <span class="section-title">📁 Tout ce que vous avez généré</span>
+        </div>
+        <div class="section-body" style="max-height: none;">
+            <div class="section-content">
+                <button type="button" class="btn-primary" id="clear-gallery" style="background: var(--error);">
+                    🗑️ Vider la galerie
+                </button>
+                <div class="gallery" id="master-gallery" style="display:none;">
+                    <div class="gallery-grid" id="master-gallery-grid"></div>
+                </div>
+                <div id="gallery-empty" style="text-align: center; padding: 2rem; color: var(--ink-dim); font-size: 0.85rem;">
+                    Aucun élément pour le moment.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="status-bar" id="status-bar">
+    <div class="spinner"></div>
+    <span id="status-text">Préparation…</span>
+</div>
+
+<div class="toast" id="toast">
+    <span class="toast-icon" id="toast-icon">✓</span>
+    <span id="toast-text">Message</span>
+</div>
+
+<canvas id="noSleepCanvas" width="2" height="2" style="position:fixed;width:1px;height:1px;opacity:0.01;pointer-events:none;z-index:-1;"></canvas>
+<video id="noSleepVideo" playsinline muted loop style="position:fixed;width:1px;height:1px;opacity:0.01;pointer-events:none;z-index:-1;"></video>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════════
+const API_BASE = 'https://apihub.agnes-ai.com/v1';
+const POLL_BASE = 'https://apihub.agnes-ai.com/agnesapi';
+const MODEL_VIDEO = 'agnes-video-v2.0';
+const FRAME_RATE = 24;
+const POLLINATIONS_BASE = 'https://image.pollinations.ai/prompt/';
+const IMG_TIMEOUT_MS = 90000;
+const IMG_RETRY = 3;
+
+// ⚠️ CORRECTIF TIMEOUT : 40 tentatives max = 5 minutes
+const MAX_POLL_ATTEMPTS = 40;
+const POLL_INTERVAL_SEC = 8;
+const POLL_TIMEOUT_MS = 5 * 60 * 1000;
+
+const API_KEY_STORAGE = 'agnes_api_key';
+const GALLERY_STORAGE = 'studio_gallery_v8';
+const MAX_IMAGE_SIZE = 12 * 1024 * 1024;
+const THUMBNAIL_MAX_WIDTH = 200;
+
+// ══════════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════════
+let toastTimeout = null;
+function showToast(message, type = 'success', duration = 2500) {
+    const toast = document.getElementById('toast');
+    const icon = document.getElementById('toast-icon');
+    const text = document.getElementById('toast-text');
+    if (!toast) return;
+    toast.classList.remove('visible', 'success', 'error', 'warn');
+    void toast.offsetWidth;
+    icon.textContent = { success: '✓', error: '✕', warn: '⚠' }[type] || '✓';
+    text.textContent = message;
+    toast.classList.add(type);
+    requestAnimationFrame(() => toast.classList.add('visible'));
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toast.classList.remove('visible'), duration);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// STATUS BAR
+// ══════════════════════════════════════════════════════════════════
+function setStatus(text) {
+    const bar = document.getElementById('status-bar');
+    const txt = document.getElementById('status-text');
+    if (!bar || !txt) return;
+    if (text) { bar.classList.add('visible'); txt.textContent = text; }
+    else bar.classList.remove('visible');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════════
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function log(m) { console.log('[Studio] ' + m); }
+
+// ══════════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════════
+function setTab(tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === tabId));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => setTab(t.dataset.tab));
+});
+
+// ══════════════════════════════════════════════════════════════════
+// SECTIONS COLLAPSIBLES
+// ══════════════════════════════════════════════════════════════════
+document.querySelectorAll('[data-toggle]').forEach(h => {
+    h.addEventListener('click', () => {
+        const target = document.getElementById(h.dataset.toggle);
+        if (target) target.classList.toggle('open');
+    });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// API KEY
+// ══════════════════════════════════════════════════════════════════
+function getApiKey() { try { return (localStorage.getItem(API_KEY_STORAGE) || '').trim(); } catch (e) { return ''; } }
+function saveApiKey() {
+    const input = document.getElementById('api-key-input');
+    if (!input) return;
+    const key = input.value.trim();
+    if (!key) { localStorage.removeItem(API_KEY_STORAGE); updateApiPanel(); showToast('Clé supprimée', 'warn'); return; }
+    localStorage.setItem(API_KEY_STORAGE, key);
+    updateApiPanel();
+    showToast('Clé API enregistrée ✓', 'success');
+}
+function updateApiPanel() {
+    const panel = document.getElementById('api-panel');
+    const input = document.getElementById('api-key-input');
+    const line = document.getElementById('api-status-line');
+    const text = document.getElementById('api-status-text');
+    const key = getApiKey();
+    if (key) {
+        panel.classList.add('ok'); line.classList.add('ok');
+        text.textContent = 'Clé active · ' + key.slice(0, 8) + '…' + key.slice(-4);
+        input.value = key;
+    } else {
+        panel.classList.remove('ok'); line.classList.remove('ok');
+        text.textContent = 'Aucune clé API (vidéos désactivées)';
+        input.value = '';
+    }
+    if (typeof updateVideoBtn === 'function') updateVideoBtn();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GALLERY
+// ══════════════════════════════════════════════════════════════════
+let gallery = [];
+function loadGallery() {
+    try { gallery = JSON.parse(localStorage.getItem(GALLERY_STORAGE) || '[]'); } catch (e) { gallery = []; }
+    renderGallery();
+}
+function saveGallery() {
+    try { localStorage.setItem(GALLERY_STORAGE, JSON.stringify(gallery.slice(0, 20))); } catch (e) {}
+}
+function addToGallery(type, url, label) {
+    const item = { id: Date.now() + Math.random(), type, url, label, date: new Date().toISOString() };
+    gallery.unshift(item);
+    saveGallery();
+    renderGallery();
+}
+function removeFromGallery(id) {
+    gallery = gallery.filter(g => g.id !== id);
+    saveGallery();
+    renderGallery();
+}
+function renderGallery() {
+    const container = document.getElementById('master-gallery');
+    const grid = document.getElementById('master-gallery-grid');
+    const empty = document.getElementById('gallery-empty');
+    if (!gallery.length) { container.style.display = 'none'; empty.style.display = 'block'; return; }
+    container.style.display = 'block'; empty.style.display = 'none';
+    grid.innerHTML = gallery.map(item => {
+        const media = item.type === 'video'
+            ? '<video controls preload="metadata" muted playsinline><source src="' + item.url + '" type="video/mp4"></video>'
+            : '<img src="' + item.url + '" loading="lazy" alt="">';
+        return '<div class="gallery-item">' +
+            '<a class="g-download" href="' + item.url + '" download="' + esc(item.label.replace(/[^a-z0-9]/gi, '_')) + (item.type === 'video' ? '.mp4' : '.jpg') + '" target="_blank" rel="noopener">⬇</a>' +
+            '<button class="g-remove" data-remove="' + item.id + '">✕</button>' +
+            media +
+            '<div class="g-caption">' + esc(item.label) + '</div>' +
+        '</div>';
+    }).join('');
+    grid.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            removeFromGallery(parseFloat(btn.dataset.remove));
+            showToast('Supprimé', 'warn', 1200);
+        });
+    });
+}
+document.getElementById('clear-gallery').addEventListener('click', () => {
+    if (!gallery.length) return;
+    if (!confirm('Vider toute la galerie ?')) return;
+    gallery = [];
+    saveGallery();
+    renderGallery();
+    showToast('Galerie vidée', 'warn');
+});
+
+// ══════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════
+const state = {
+    video: { mode: 'image', images: [], isRunning: false, stopRequested: false, queue: [], completed: 0, failed: 0, mainPrompt: '', intensity: 'subtle', durationFrames: 153, videoCount: 1, selectedStyle: null },
+    image: { isRunning: false, stopRequested: false },
+    story: { isRunning: false, stopRequested: false, scenes: [], title: '', mode: 'keywords' }
+};
+
+// ══════════════════════════════════════════════════════════════════
+// STYLES VIDÉO
+// ══════════════════════════════════════════════════════════════════
+const VIDEO_STYLES = {
+    cinema: [
+        { id: 'cinema-hollywood', name: 'Hollywood', emoji: '🎬', desc: 'Blockbuster pro', prompt: 'Hollywood blockbuster cinematic look, professional film lighting, shallow depth of field, anamorphic lens flare, 35mm film grain.' },
+        { id: 'cinema-noir', name: 'Film Noir', emoji: '🕵️', desc: 'N&B, ombres dures', prompt: 'classic film noir cinematography, high contrast black and white, dramatic chiaroscuro, deep shadows.' },
+        { id: 'cinema-western', name: 'Western', emoji: '🤠', desc: 'Désert, poussière', prompt: 'spaghetti western cinematography, warm dusty tones, harsh sunlight, long shadows.' },
+        { id: 'cinema-scifi', name: 'Science-Fiction', emoji: '🚀', desc: 'Futur, néons', prompt: 'modern science fiction cinematography, cool blue and teal palette, holographic interfaces.' },
+        { id: 'cinema-tarantino', name: 'Tarantino', emoji: '🩸', desc: 'Style 70s', prompt: 'Quentin Tarantino cinematography, 1970s film stock look, saturated colors, dramatic close-ups.' },
+        { id: 'cinema-nolan', name: 'Christopher Nolan', emoji: '🌀', desc: 'IMAX, épique', prompt: 'Christopher Nolan cinematography, IMAX quality, cool blue tones, deep blacks, practical effects.' }
+    ],
+    anime: [
+        { id: 'anime-ghibli', name: 'Studio Ghibli', emoji: '🌿', desc: 'Nature, douceur', prompt: 'Studio Ghibli anime style, Hayao Miyazaki aesthetic, hand-painted watercolor backgrounds.' },
+        { id: 'anime-cel90', name: 'Cel 90s', emoji: '📺', desc: 'Animation classique', prompt: 'classic 1990s Japanese cel animation, bold black outlines, flat vibrant colors.' },
+        { id: 'anime-manga', name: 'Manga N&B', emoji: '🖤', desc: 'Encre, contraste', prompt: 'black and white Japanese manga style, stark ink outlines, dramatic screentones.' },
+        { id: 'anime-shojo', name: 'Shojo', emoji: '🌸', desc: 'Romantique', prompt: 'shojo anime style, soft pastel colors, sparkling highlights, flower petals.' },
+        { id: 'anime-shonen', name: 'Shonen', emoji: '⚡', desc: 'Action, énergie', prompt: 'shonen anime style, dynamic action lines, strong contrast.' },
+        { id: 'anime-mecha', name: 'Mecha', emoji: '🤖', desc: 'Robots, sci-fi', prompt: 'mecha anime style, giant robots, futuristic Japanese sci-fi, metallic textures.' }
+    ],
+    documentaire: [
+        { id: 'doc-nature', name: 'Nature', emoji: '🌿', desc: 'BBC Earth', prompt: 'nature documentary cinematography, ultra sharp, golden hour, BBC Earth style.' },
+        { id: 'doc-urbain', name: 'Urbain', emoji: '🏙️', desc: 'Ville, reportage', prompt: 'urban documentary, handheld camera, natural light, authentic street photography.' },
+        { id: 'doc-historique', name: 'Historique', emoji: '📜', desc: 'Reconstitution', prompt: 'historical documentary style, muted colors, archival look, vintage reconstruction.' },
+        { id: 'doc-portrait', name: 'Portrait', emoji: '👤', desc: 'Interview', prompt: 'portrait documentary, interview style, soft window light, shallow depth of field.' }
+    ],
+    cartoon: [
+        { id: 'cartoon-simpson', name: 'Les Simpson', emoji: '🍩', desc: 'Peau jaune', prompt: 'The Simpsons cartoon style, yellow-skinned characters, thick black outlines, flat saturated colors.' },
+        { id: 'cartoon-pixar', name: 'Pixar 3D', emoji: '✨', desc: 'Rendu 3D', prompt: 'Pixar 3D animation style, high-quality 3D rendering, expressive characters.' },
+        { id: 'cartoon-disney', name: 'Disney', emoji: '🏰', desc: 'Animation 2D', prompt: 'classic Disney 2D animation style, expressive characters, watercolor backgrounds.' }
+    ],
+    ambiance: [
+        { id: 'amb-golden', name: 'Golden Hour', emoji: '🌅', desc: 'Lumière dorée', prompt: 'golden hour warm sunlight, soft amber glow, long shadows.' },
+        { id: 'amb-night', name: 'Nuit', emoji: '🌙', desc: 'Ambiance nocturne', prompt: 'night atmosphere, cool moonlight, blue and silver tones.' },
+        { id: 'amb-misty', name: 'Brume', emoji: '🌫️', desc: 'Mystérieux', prompt: 'atmospheric mist, soft haze, diffused glowing light, mystical fog.' }
+    ]
+};
+
+// ══════════════════════════════════════════════════════════════════
+// FORMULAIRE IMAGE
+// ══════════════════════════════════════════════════════════════════
+function getImageIdentity() {
+    const el = document.getElementById('img-race');
+    return el && el.value ? el.value : '';
+}
+function getImageOutfit() {
+    const get = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+    const parts = [];
+    const buttons = get('outfit-buttons');
+    const collar = get('outfit-collar');
+    if (buttons) { for (let i = 0; i < 5; i++) parts.push(buttons); }
+    if (collar) { for (let i = 0; i < 5; i++) parts.push(collar); }
+    const tie = get('outfit-tie');
+    const top = get('outfit-top');
+    const jacket = get('outfit-jacket');
+    const bottom = get('outfit-bottom');
+    const acc = get('outfit-accessories');
+    const ctx = get('outfit-context');
+    if (tie) parts.push(tie);
+    if (top) parts.push(top);
+    if (jacket) parts.push(jacket);
+    if (bottom) parts.push(bottom);
+    if (acc) parts.push(acc);
+    if (ctx) parts.push(ctx);
+    return parts;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FORMULAIRE VIDÉO
+// ══════════════════════════════════════════════════════════════════
+function getVideoIdentity() {
+    const el = document.getElementById('video-race');
+    return el && el.value ? el.value : '';
+}
+function getVideoOutfit() {
+    const get = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+    const parts = [];
+    const buttons = get('video-outfit-buttons');
+    const collar = get('video-outfit-collar');
+    if (buttons) { for (let i = 0; i < 5; i++) parts.push(buttons); }
+    if (collar) { for (let i = 0; i < 5; i++) parts.push(collar); }
+    const tie = get('video-outfit-tie');
+    const top = get('video-outfit-top');
+    const jacket = get('video-outfit-jacket');
+    const bottom = get('video-outfit-bottom');
+    const acc = get('video-outfit-accessories');
+    const ctx = get('video-outfit-context');
+    if (tie) parts.push(tie);
+    if (top) parts.push(top);
+    if (jacket) parts.push(jacket);
+    if (bottom) parts.push(bottom);
+    if (acc) parts.push(acc);
+    if (ctx) parts.push(ctx);
+    return parts;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMAGE GENERATION
+// ══════════════════════════════════════════════════════════════════
+function getQualityDimensions(format, quality) {
+    const map = {
+        standard: { portrait: [768, 1344], square: [1024, 1024], landscape: [1344, 768] },
+        high:     { portrait: [1024, 1792], square: [1280, 1280], landscape: [1792, 1024] },
+        ultra:    { portrait: [1280, 2240], square: [1536, 1536], landscape: [2240, 1280] }
+    };
+    const q = map[quality] || map.high;
+    const d = q[format] || q.portrait;
+    return { w: d[0], h: d[1] };
+}
+
+function buildImageUrl(prompt, format = 'portrait', seed = null, model = 'flux', quality = 'high') {
+    const identity = getImageIdentity();
+    const outfitParts = getImageOutfit();
+    const outfitStr = outfitParts.join('. ');
+    const enrichedPrompt = [
+        identity ? 'SUBJECT IDENTITY: ' + identity : '',
+        outfitParts.length ? 'MANDATORY OUTFIT DETAILS: ' + outfitStr + '. NO EXCEPTION.' : '',
+        prompt,
+        outfitParts.length ? 'STRICTLY REQUIRED: ' + outfitStr + '. CRITICAL — DO NOT CHANGE.' : ''
+    ].filter(Boolean).join('. ');
+    const s = seed !== null ? seed : Math.floor(Math.random() * 1000000);
+    const { w, h } = getQualityDimensions(format, quality);
+    return POLLINATIONS_BASE + encodeURIComponent(enrichedPrompt)
+        + '?width=' + w + '&height=' + h + '&seed=' + s
+        + '&model=' + model + '&enhance=true&nologo=true&private=true&safe=false';
+}
+
+async function loadOneImage(prompt, format, index, model, quality) {
+    for (let attempt = 0; attempt < IMG_RETRY; attempt++) {
+        const seed = Math.floor(Math.random() * 1000000) + attempt * 1000;
+        const url = buildImageUrl(prompt, format, seed, model, quality);
+        try {
+            await new Promise((resolve, reject) => {
+                const img = new Image();
+                let timeoutId = setTimeout(() => { reject(new Error('Timeout')); }, IMG_TIMEOUT_MS);
+                img.onload = () => { clearTimeout(timeoutId); resolve(); };
+                img.onerror = () => { clearTimeout(timeoutId); reject(new Error('Erreur')); };
+                img.crossOrigin = 'anonymous';
+                img.src = url;
+            });
+            return url;
+        } catch (e) {
+            log('Image ' + index + ' tentative ' + (attempt + 1) + ' : ' + e.message);
+            if (attempt < IMG_RETRY - 1) await sleep(2500 * (attempt + 1));
+        }
+    }
+    return null;
+}
+
+async function generateImages() {
+    if (state.image.isRunning) return;
+    const prompt = document.getElementById('img-prompt').value.trim();
+    if (!prompt) { showToast('Décrivez une image d\'abord', 'error'); return; }
+    const count = parseInt(document.getElementById('img-count').value, 10);
+    const format = document.getElementById('img-format').value;
+    const model = document.getElementById('img-model').value;
+    const quality = document.getElementById('img-quality').value;
+
+    state.image.isRunning = true;
+    state.image.stopRequested = false;
+    document.getElementById('img-generate-btn').disabled = true;
+    document.getElementById('img-stop-btn').classList.add('visible');
+
+    const resultsGrid = document.getElementById('img-results-grid');
+    const resultsEl = document.getElementById('img-results');
+    resultsGrid.innerHTML = '<div style="grid-column: 1 / -1; margin-bottom: 1rem;">' +
+        '<div style="font-size: 0.75rem; color: var(--ink-dim); margin-bottom: 0.3rem;">Génération : <span id="img-progress-text">0/' + count + '</span></div>' +
+        '<div class="progress-bar"><div class="fill" id="img-progress-fill" style="width:0%"></div></div></div>';
+    resultsEl.style.display = 'block';
+
+    let done = 0;
+    const updateProgress = () => {
+        document.getElementById('img-progress-text').textContent = done + '/' + count;
+        document.getElementById('img-progress-fill').style.width = (done / count * 100) + '%';
+    };
+    setStatus('Génération en cours…');
+
+    const promises = [];
+    for (let i = 0; i < count; i++) {
+        promises.push(
+            loadOneImage(prompt, format, i, model, quality).then(url => {
+                if (url) {
+                    const el = document.createElement('div');
+                    el.className = 'gallery-item';
+                    el.innerHTML =
+                        '<a class="g-download" href="' + url + '" download="image-' + (i + 1) + '.jpg" target="_blank" rel="noopener">⬇</a>' +
+                        '<button class="g-remove">✕</button>' +
+                        '<img src="' + url + '" loading="lazy" alt="">' +
+                        '<div class="g-caption">Image ' + (i + 1) + '</div>';
+                    el.querySelector('.g-remove').addEventListener('click', () => el.remove());
+                    resultsGrid.appendChild(el);
+                    addToGallery('image', url, 'Image ' + model + ' ' + (i + 1));
+                }
+                done++;
+                updateProgress();
+                return url;
+            })
+        );
+    }
+
+    const results = await Promise.allSettled(promises);
+    const successCount = results.filter(r => r.status === 'fulfilled' && r.value).length;
+    state.image.isRunning = false;
+    document.getElementById('img-generate-btn').disabled = false;
+    document.getElementById('img-stop-btn').classList.remove('visible');
+    setStatus(null);
+    showToast(successCount + '/' + count + ' images générées', successCount > 0 ? 'success' : 'error');
+}
+
+document.getElementById('img-generate-btn').addEventListener('click', generateImages);
+document.getElementById('img-stop-btn').addEventListener('click', () => { state.image.stopRequested = true; });
+
+const IMG_PRESETS = [
+    { label: '👩‍💼 Femme couvert bureau', text: 'Ultra detailed portrait, professional businesswoman, office desk, neck fully covered by collar, photorealistic, 8k' },
+    { label: '👨‍💼 Homme costume', text: 'Professional businessman in dark suit, office background, photorealistic, 8k' },
+    { label: '👩‍🎓 Étudiante', text: 'Young female student, casual outfit, campus background, photorealistic' },
+    { label: '⚔️ Samouraï', text: 'A lone samurai under a cherry blossom tree, anime Ghibli style' },
+    { label: '🌆 Cyberpunk', text: 'A cyberpunk Tokyo street at night in the rain, pink and cyan neon' }
+];
+document.getElementById('img-presets').innerHTML = IMG_PRESETS.map((p, i) =>
+    '<div class="prompt-preset" data-i="' + i + '">' + esc(p.label) + '</div>'
+).join('');
+document.querySelectorAll('#img-presets .prompt-preset').forEach(el => {
+    el.addEventListener('click', () => { document.getElementById('img-prompt').value = IMG_PRESETS[parseInt(el.dataset.i, 10)].text; });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// STORY
+// ══════════════════════════════════════════════════════════════════
+const STORY_KEYWORDS_PRESETS = [
+    { label: '🐉 Dragon + fille', text: 'dragon, petite fille, forêt, amitié, aventure' },
+    { label: '🚀 Espace + garçon', text: 'garçon, fusée, espace, planète, découverte' },
+    { label: '🐱 Chat magicien', text: 'chat, étoiles, magie, aventure, amitié' },
+    { label: '🌸 Fée des fleurs', text: 'fée, fleurs, forêt, hiver, courage' },
+    { label: '🤖 Robot ami', text: 'robot, grenier, amitié, recherche, famille' }
+];
+document.getElementById('story-keywords-presets').innerHTML = STORY_KEYWORDS_PRESETS.map((p, i) =>
+    '<div class="prompt-preset" data-i="' + i + '">' + esc(p.label) + '</div>'
+).join('');
+document.querySelectorAll('#story-keywords-presets .prompt-preset').forEach(el => {
+    el.addEventListener('click', () => { document.getElementById('story-keywords').value = STORY_KEYWORDS_PRESETS[parseInt(el.dataset.i, 10)].text; });
+});
+
+function generateStoryStructure(idea, scenesCount) {
+    const templates = ['Introduction', 'Découverte', 'Problème', 'Aide', 'Combat', 'Résolution', 'Transformation', 'Retour', 'Leçon', 'Fin heureuse'];
+    const scenes = [];
+    for (let i = 0; i < scenesCount; i++) {
+        const idx = Math.floor(i * templates.length / scenesCount);
+        scenes.push({ num: i + 1, role: templates[idx] || 'Scène ' + (i + 1), description: '', narration: '', imagePrompt: '', imageUrl: null });
+    }
+    return scenes;
+}
+
+async function generateStory() {
+    if (state.story.isRunning) return;
+    const mode = state.story.mode || 'keywords';
+    let idea = '';
+    if (mode === 'keywords') {
+        const kw = document.getElementById('story-keywords').value.trim();
+        if (!kw) { showToast('Entrez des mots-clés', 'error'); return; }
+        idea = 'Story based on keywords: ' + kw;
+    } else {
+        const custom = document.getElementById('story-prompt-custom').value.trim();
+        if (!custom) { showToast('Écrivez votre prompt', 'error'); return; }
+        idea = custom;
+    }
+    const scenesCount = parseInt(document.getElementById('story-scenes-count').value, 10);
+    const style = document.getElementById('story-style').value;
+
+    state.story.isRunning = true;
+    state.story.stopRequested = false;
+    document.getElementById('story-generate-btn').disabled = true;
+    document.getElementById('story-stop-btn').classList.add('visible');
+
+    setStatus('Création de la structure…');
+    const scenes = generateStoryStructure(idea, scenesCount);
+    const identity = getImageIdentity();
+    const outfitParts = getImageOutfit();
+
+    for (let i = 0; i < scenes.length; i++) {
+        const s = scenes[i];
+        s.description = s.role + ' — ' + idea;
+        s.narration = 'Scène ' + (i + 1) + ' : ' + idea;
+        s.imagePrompt = 'Story illustration, scene ' + (i + 1) + ': ' + idea + ', ' + s.role + ', ' + style;
+        if (identity) s.imagePrompt += ', ' + identity;
+        if (outfitParts.length) s.imagePrompt += ', ' + outfitParts.join(', ');
+    }
+    state.story.scenes = scenes;
+    state.story.title = 'Histoire : ' + idea.slice(0, 50);
+
+    setStatus('Génération des images en parallèle…');
+    const promises = scenes.map((s, i) =>
+        loadOneImage(s.imagePrompt, 'portrait', i, 'flux', 'high').then(url => {
+            if (url) { s.imageUrl = url; addToGallery('image', url, 'Scène ' + (i + 1)); }
+        })
+    );
+    await Promise.allSettled(promises);
+
+    state.story.isRunning = false;
+    document.getElementById('story-generate-btn').disabled = false;
+    document.getElementById('story-stop-btn').classList.remove('visible');
+    document.getElementById('story-preview').classList.remove('hidden');
+    renderStory();
+    setStatus(null);
+    showToast('Histoire créée !', 'success');
+}
+
+function renderStory() {
+    document.getElementById('story-title').value = state.story.title;
+    const list = document.getElementById('story-scenes-list');
+    list.innerHTML = state.story.scenes.map((s, i) => {
+        const img = s.imageUrl
+            ? '<img src="' + s.imageUrl + '" loading="lazy" alt="">'
+            : '<div style="text-align:center;padding:1rem;color:var(--ink-dim);font-size:0.75rem;">Image non générée</div>';
+        return '<div class="story-scene">' +
+            '<div class="scene-num">Scène ' + (i + 1) + ' — ' + esc(s.role) + '</div>' +
+            '<div class="scene-desc">' + esc(s.description) + '</div>' +
+            '<div class="scene-narration">🗣️ ' + esc(s.narration) + '</div>' +
+            img +
+            '<div class="scene-actions">' +
+                '<button data-regen="' + i + '">🔄 Nouvelle image</button>' +
+                '<button data-speak="' + i + '">🔊 Écouter</button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+    list.querySelectorAll('[data-regen]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const i = parseInt(btn.dataset.regen, 10);
+            btn.textContent = '⏳...';
+            const url = await loadOneImage(state.story.scenes[i].imagePrompt, 'portrait', i, 'flux', 'high');
+            if (url) state.story.scenes[i].imageUrl = url;
+            renderStory();
+        });
+    });
+    list.querySelectorAll('[data-speak]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const i = parseInt(btn.dataset.speak, 10);
+            speak(state.story.scenes[i].narration);
+        });
+    });
+}
+
+function speak(text) {
+    if (!('speechSynthesis' in window)) { showToast('Synthèse vocale non supportée', 'warn'); return; }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'fr-FR';
+    u.rate = 0.95;
+    window.speechSynthesis.speak(u);
+}
+
+document.getElementById('story-generate-btn').addEventListener('click', generateStory);
+document.getElementById('story-stop-btn').addEventListener('click', () => { state.story.stopRequested = true; });
+document.getElementById('story-regenerate-images').addEventListener('click', async () => {
+    setStatus('Regénération…');
+    const promises = state.story.scenes.map((s, i) =>
+        loadOneImage(s.imagePrompt, 'portrait', i, 'flux', 'high').then(url => { if (url) s.imageUrl = url; })
+    );
+    await Promise.allSettled(promises);
+    renderStory();
+    setStatus(null);
+    showToast('Images régénérées', 'success');
+});
+
+document.getElementById('story-mode-keywords').addEventListener('click', () => {
+    state.story.mode = 'keywords';
+    document.getElementById('story-mode-keywords').classList.add('selected');
+    document.getElementById('story-mode-prompt').classList.remove('selected');
+    document.getElementById('story-keywords-section').classList.remove('hidden');
+    document.getElementById('story-prompt-section').classList.add('hidden');
+});
+document.getElementById('story-mode-prompt').addEventListener('click', () => {
+    state.story.mode = 'prompt';
+    document.getElementById('story-mode-prompt').classList.add('selected');
+    document.getElementById('story-mode-keywords').classList.remove('selected');
+    document.getElementById('story-prompt-section').classList.remove('hidden');
+    document.getElementById('story-keywords-section').classList.add('hidden');
+});
+
+document.getElementById('story-export-video').addEventListener('click', async () => {
+    if (!state.story.scenes.length) { showToast('Créez d\'abord une histoire', 'error'); return; }
+    const scenesWithImg = state.story.scenes.filter(s => s.imageUrl);
+    if (!scenesWithImg.length) { showToast('Aucune image à exporter', 'error'); return; }
+    showToast('Export en cours…', 'success', 5000);
+    setStatus('Préparation de la vidéo…');
+    try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 720;
+        canvas.height = 1280;
+        const ctx = canvas.getContext('2d');
+        const stream = canvas.captureStream(30);
+        const mimeTypes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+        const supported = mimeTypes.find(m => MediaRecorder.isTypeSupported(m));
+        if (!supported) throw new Error('MediaRecorder non supporté');
+        const recorder = new MediaRecorder(stream, { mimeType: supported });
+        const chunks = [];
+        recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+        recorder.start();
+        const framesPerScene = 30 * 3;
+        for (let i = 0; i < scenesWithImg.length; i++) {
+            if (state.story.stopRequested) break;
+            const scene = scenesWithImg[i];
+            setStatus('Export scène ' + (i + 1) + '/' + scenesWithImg.length + '…');
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = scene.imageUrl; });
+            for (let f = 0; f < framesPerScene; f++) {
+                const progress = f / framesPerScene;
+                const scale = 1 + progress * 0.08;
+                const w = canvas.width * scale;
+                const h = canvas.height * scale;
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+                if (f > 5) {
+                    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+                    ctx.fillRect(0, canvas.height - 180, canvas.width, 180);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 26px sans-serif';
+                    ctx.textAlign = 'center';
+                    wrapText(ctx, scene.narration, canvas.width / 2, canvas.height - 110, canvas.width - 60, 32);
+                }
+                await sleep(1000 / 30);
+            }
+        }
+        recorder.stop();
+        await sleep(1000);
+        const blob = new Blob(chunks, { type: supported });
+        const url = URL.createObjectURL(blob);
+        addToGallery('video', url, 'Histoire — ' + state.story.title);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'histoire-' + Date.now() + '.webm';
+        a.click();
+        setStatus(null);
+        showToast('Vidéo exportée ✓', 'success', 3000);
+    } catch (e) {
+        console.error(e);
+        setStatus(null);
+        showToast('Erreur export : ' + e.message, 'error', 4000);
+    }
+});
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    const words = text.split(' ');
+    let line = '';
+    const lines = [];
+    for (const w of words) {
+        const test = line + w + ' ';
+        if (ctx.measureText(test).width > maxWidth && line) { lines.push(line.trim()); line = w + ' '; }
+        else line = test;
+    }
+    lines.push(line.trim());
+    const startY = y - (lines.length - 1) * lineHeight / 2;
+    lines.forEach((l, i) => ctx.fillText(l, x, startY + i * lineHeight));
+}
+
+// ══════════════════════════════════════════════════════════════════
+// VIDÉO IA
+// ══════════════════════════════════════════════════════════════════
+const stateVideo = state.video;
+
+document.getElementById('mode-btn-image').addEventListener('click', () => setVideoMode('image'));
+document.getElementById('mode-btn-text').addEventListener('click', () => setVideoMode('text'));
+function setVideoMode(mode) {
+    stateVideo.mode = mode;
+    document.getElementById('mode-btn-image').classList.toggle('selected', mode === 'image');
+    document.getElementById('mode-btn-text').classList.toggle('selected', mode === 'text');
+    document.getElementById('section-image').classList.toggle('hidden', mode !== 'image');
+    document.getElementById('section-text').classList.toggle('hidden', mode !== 'text');
+    document.getElementById('section-prompt-img').classList.toggle('hidden', mode !== 'image');
+    document.getElementById('row-number-of-videos').classList.toggle('hidden', mode !== 'text');
+    updateVideoBtn();
+}
+
+const uploadZone = document.getElementById('upload-zone');
+const fileInput = document.getElementById('file-input');
+uploadZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', async e => {
+    const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+    for (const f of files) {
+        if (f.size > MAX_IMAGE_SIZE) continue;
+        const dataUri = await new Promise(r => { const rd = new FileReader(); rd.onload = ev => r(ev.target.result); rd.readAsDataURL(f); });
+        const thumbnail = await makeThumb(dataUri);
+        stateVideo.images.push({ dataUri, thumbnail, id: Date.now() + Math.random() });
+    }
+    renderImages();
+    fileInput.value = '';
+    updateVideoBtn();
+});
+function makeThumb(dataUri) {
+    return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const c = document.createElement('canvas');
+                const ratio = img.height / img.width;
+                c.width = THUMBNAIL_MAX_WIDTH;
+                c.height = Math.round(THUMBNAIL_MAX_WIDTH * ratio);
+                c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                resolve(c.toDataURL('image/jpeg', 0.7));
+            } catch (e) { resolve(dataUri); }
+        };
+        img.onerror = () => resolve(dataUri);
+        img.src = dataUri;
+    });
+}
+function renderImages() {
+    const grid = document.getElementById('images-grid');
+    grid.innerHTML = stateVideo.images.map(img =>
+        '<div class="image-card"><img src="' + (img.thumbnail || img.dataUri) + '"><button class="remove-btn" data-remove="' + img.id + '">✕</button></div>'
+    ).join('');
+    grid.querySelectorAll('[data-remove]').forEach(b => {
+        b.addEventListener('click', e => {
+            e.stopPropagation();
+            const id = parseFloat(b.dataset.remove);
+            stateVideo.images = stateVideo.images.filter(i => i.id !== id);
+            renderImages(); updateVideoBtn();
+        });
+    });
+}
+
+document.getElementById('text-prompt').addEventListener('input', e => { stateVideo.mainPrompt = e.target.value; updateVideoBtn(); });
+document.getElementById('main-prompt').addEventListener('input', e => { stateVideo.mainPrompt = e.target.value; });
+document.getElementById('duration-select').addEventListener('change', e => { stateVideo.durationFrames = parseInt(e.target.value, 10); });
+document.getElementById('intensity-select').addEventListener('change', e => { stateVideo.intensity = e.target.value; });
+document.getElementById('count-select').addEventListener('change', e => { stateVideo.videoCount = parseInt(e.target.value, 10); updateVideoBtn(); });
+
+function updateVideoBtn() {
+    const btn = document.getElementById('generate-btn');
+    if (!btn) return;
+    if (!getApiKey()) { btn.disabled = true; btn.textContent = 'Ajoutez votre clé API'; return; }
+    if (stateVideo.isRunning) { btn.disabled = true; btn.textContent = 'Création…'; return; }
+    if (stateVideo.mode === 'image') {
+        btn.disabled = stateVideo.images.length === 0;
+        btn.textContent = stateVideo.images.length > 0 ? ('Créer ' + stateVideo.images.length + ' vidéo' + (stateVideo.images.length > 1 ? 's' : '')) : 'Ajoutez des images';
+    } else {
+        const hasText = stateVideo.mainPrompt.trim().length > 0;
+        btn.disabled = !hasText;
+        btn.textContent = hasText ? ('Créer ' + stateVideo.videoCount + ' vidéo' + (stateVideo.videoCount > 1 ? 's' : '')) : 'Écrivez une description';
+    }
+}
+
+function renderStyles() {
+    const container = document.getElementById('styles-grid');
+    if (!container) return;
+    let html = '';
+    html += '<div class="no-style-card ' + (stateVideo.selectedStyle === null ? 'selected' : '') + '" data-style="none">' +
+        (stateVideo.selectedStyle === null ? '✓ Aucun style' : '🚫 Aucun style') + '</div>';
+    const categories = { cinema: '🎬 Cinéma', anime: '🎌 Anime', documentaire: '📹 Documentaire', cartoon: '🍩 Cartoon', ambiance: '✨ Ambiance' };
+    for (const [key, label] of Object.entries(categories)) {
+        html += '<div class="style-category-header">' + label + '</div>';
+        html += VIDEO_STYLES[key].map(s =>
+            '<div class="style-card ' + (stateVideo.selectedStyle === s.id ? 'selected' : '') + '" data-style="' + s.id + '">' +
+            '<div class="style-emoji">' + s.emoji + '</div>' +
+            '<div><div class="style-name">' + esc(s.name) + '</div>' +
+            '<div class="style-desc">' + esc(s.desc) + '</div></div></div>'
+        ).join('');
+    }
+    container.innerHTML = html;
+    container.querySelectorAll('[data-style]').forEach(el => {
+        el.addEventListener('click', () => {
+            const val = el.dataset.style;
+            stateVideo.selectedStyle = (val === 'none') ? null : val;
+            renderStyles();
+        });
+    });
+}
+
+function buildVideoPrompt() {
+    const allStyles = Object.values(VIDEO_STYLES).flat();
+    const style = stateVideo.selectedStyle ? allStyles.find(s => s.id === stateVideo.selectedStyle) : null;
+    const identity = getVideoIdentity();
+    const outfitParts = getVideoOutfit();
+    const parts = [];
+    parts.push('Animate this exact image as the starting frame.');
+    parts.push('The subject must remain IDENTICAL: same face, same identity, same pose.');
+    parts.push('Preserve the exact composition and framing.');
+    if (identity) parts.push('SUBJECT IDENTITY: ' + identity);
+    if (outfitParts.length) {
+        parts.push('CRITICAL OUTFIT DETAILS: ' + outfitParts.join('. '));
+        parts.push('REPEAT: ' + outfitParts.join('. '));
+    }
+    if (style) parts.push(style.prompt);
+    if (stateVideo.mainPrompt && stateVideo.mainPrompt.trim()) parts.push(stateVideo.mainPrompt.trim());
+    parts.push('Portrait orientation 9:16 vertical, 24fps, no text, no watermarks');
+    return parts.join('. ');
+}
+
+async function apiFetch(url, opts = {}) {
+    for (let i = 0; i < 7; i++) {
+        if (stateVideo.stopRequested) throw new Error('Arrêt');
+        try {
+            const res = await fetch(url, opts);
+            if (res.status === 429) { await sleep([15, 30, 45, 60, 90, 120, 180][Math.min(i, 6)] * 1000); continue; }
+            if (res.status === 503) { await sleep([5, 10, 15, 20, 30, 45][Math.min(i, 5)] * 1000); continue; }
+            return res;
+        } catch (e) {
+            if (e.message === 'Arrêt') throw e;
+            await sleep([3, 5, 8, 12, 20, 30][Math.min(i, 5)] * 1000);
+        }
+    }
+    return fetch(url, opts);
+}
+async function createVideoTask(prompt, imageDataUri) {
+    const body = { model: MODEL_VIDEO, prompt, num_frames: stateVideo.durationFrames, frame_rate: FRAME_RATE };
+    if (imageDataUri) body.image = imageDataUri;
+    const res = await apiFetch(API_BASE + '/videos', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + getApiKey(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    return data.video_id || data.id || data.task_id;
+}
+
+async function pollVideo(videoId, onProg) {
+    const startTime = Date.now();
+    await sleep(20000);
+    for (let i = 0; i < MAX_POLL_ATTEMPTS; i++) {
+        if (stateVideo.stopRequested) throw new Error('Arrêt');
+        const elapsed = Date.now() - startTime;
+        if (elapsed > POLL_TIMEOUT_MS) throw new Error('Timeout 5 minutes — la vidéo n\'a pas été générée');
+        const remaining = Math.ceil((POLL_TIMEOUT_MS - elapsed) / 1000);
+        onProg('En cours… (' + (i + 1) + '/' + MAX_POLL_ATTEMPTS + ' — reste ' + remaining + 's)');
+        const url = POLL_BASE + '?video_id=' + encodeURIComponent(videoId) + '&model_name=' + encodeURIComponent(MODEL_VIDEO);
+        const res = await apiFetch(url, { headers: { 'Authorization': 'Bearer ' + getApiKey() } });
+        const d = await res.json();
+        if (d.status === 'completed' || d.status === 'succeeded' || d.status === 'done') {
+            return (d.metadata && d.metadata.url) || d.url || (d.output && d.output.url);
+        }
+        if (d.status === 'failed') throw new Error('Échec');
+        await sleep(POLL_INTERVAL_SEC * 1000);
+    }
+    throw new Error('Timeout — la vidéo n\'a pas été générée à temps');
+}
+
+async function startVideoGeneration() {
+    if (stateVideo.isRunning) return;
+    if (!getApiKey()) { showToast('Clé API requise', 'error'); return; }
+    if (stateVideo.mode === 'image' && !stateVideo.images.length) { showToast('Ajoutez une image', 'error'); return; }
+    if (stateVideo.mode === 'text' && !stateVideo.mainPrompt.trim()) { showToast('Écrivez une description', 'error'); return; }
+
+    stateVideo.isRunning = true;
+    stateVideo.stopRequested = false;
+    stateVideo.completed = 0;
+    stateVideo.failed = 0;
+    document.getElementById('generate-btn').disabled = true;
+    document.getElementById('stop-btn').classList.add('visible');
+
+    const queue = stateVideo.mode === 'image'
+        ? stateVideo.images.map((img, i) => ({ label: 'Image ' + (i + 1), image: img, status: 'pending' }))
+        : Array.from({ length: stateVideo.videoCount }, (_, i) => ({ label: 'Vidéo ' + (i + 1), image: null, status: 'pending' }));
+    stateVideo.queue = queue;
+
+    const queueEl = document.getElementById('queue');
+    queueEl.style.display = 'block';
+    queueEl.innerHTML = queue.map(q =>
+        '<div class="queue-item pending"><div class="q-icon">○</div><div class="q-name">' + esc(q.label) + '</div><div class="q-status">En attente</div></div>'
+    ).join('');
+
+    const polling = [];
+    for (let i = 0; i < queue.length; i++) {
+        if (stateVideo.stopRequested) break;
+        const item = queue[i];
+        try {
+            const prompt = buildVideoPrompt();
+            const vid = await createVideoTask(prompt, item.image ? item.image.dataUri : null);
+            item.status = 'processing';
+            const idx = queue.indexOf(item);
+            queueEl.children[idx].className = 'queue-item processing';
+            queueEl.children[idx].querySelector('.q-status').textContent = 'En cours…';
+            polling.push(
+                pollVideo(vid, (p) => queueEl.children[idx].querySelector('.q-status').textContent = p)
+                    .then(url => {
+                        queueEl.children[idx].className = 'queue-item done';
+                        queueEl.children[idx].querySelector('.q-icon').textContent = '●';
+                        queueEl.children[idx].querySelector('.q-status').textContent = 'Terminé';
+                        addToGallery('video', url, item.label);
+                        stateVideo.completed++;
+                    })
+                    .catch(e => {
+                        queueEl.children[idx].className = 'queue-item timeout';
+                        queueEl.children[idx].querySelector('.q-icon').textContent = '⏱';
+                        queueEl.children[idx].querySelector('.q-status').textContent = e.message === 'Arrêt' ? 'Arrêté' : 'Timeout 5 min';
+                        stateVideo.failed++;
+                    })
+            );
+            if (i < queue.length - 1) await sleep(20000);
+        } catch (e) { log('Échec : ' + e.message); stateVideo.failed++; }
+    }
+    await Promise.allSettled(polling);
+
+    stateVideo.isRunning = false;
+    document.getElementById('generate-btn').disabled = false;
+    document.getElementById('stop-btn').classList.remove('visible');
+    showToast(stateVideo.completed + ' réussie(s), ' + stateVideo.failed + ' échec(s)', stateVideo.completed > 0 ? 'success' : 'error');
+}
+document.getElementById('generate-btn').addEventListener('click', startVideoGeneration);
+document.getElementById('stop-btn').addEventListener('click', () => { stateVideo.stopRequested = true; });
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+(function init() {
+    document.getElementById('api-save-btn').addEventListener('click', saveApiKey);
+    document.getElementById('api-key-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); saveApiKey(); }
+    });
+    updateApiPanel();
+    loadGallery();
+    updateVideoBtn();
+    renderStyles();
+    log('Studio Créatif Pro v8 prêt.');
+})();
+</script>
+
+</body>
+</html>
