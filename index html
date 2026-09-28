@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Vidéo IA — Image + Texte + Styles</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; background: #fafafa; color: #1a1a1a; padding: 1rem; font-size: 15px; max-width: 600px; margin: 0 auto; line-height: 1.5; }
+    h1 { font-size: 1.3rem; text-align: center; margin-bottom: 0.3rem; font-weight: 500; }
+    .sub { text-align: center; color: #777; font-size: 0.8rem; font-style: italic; margin-bottom: 1.5rem; }
+    .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+    label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #777; font-weight: 600; margin-bottom: 0.4rem; }
+    input, textarea, select { width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #e5e5e5; background: #fafafa; color: #1a1a1a; font-family: inherit; font-size: 0.9rem; }
+    textarea { min-height: 80px; resize: vertical; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: #1a1a1a; }
+    .upload { border: 2px dashed #e5e5e5; border-radius: 8px; padding: 1.5rem 1rem; text-align: center; cursor: pointer; margin-bottom: 0.8rem; }
+    .upload:active { border-color: #1a1a1a; background: #f5f5f5; }
+    .upload input[type=file] { display: none; }
+    .upload-icon { font-size: 2rem; opacity: 0.5; margin-bottom: 0.4rem; }
+    .upload-text { font-size: 0.9rem; }
+    .upload-hint { font-size: 0.72rem; color: #777; }
+    .preview { margin-top: 0.8rem; }
+    .preview img { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; border: 1px solid #e5e5e5; }
+    .preview button { margin-top: 0.4rem; padding: 0.4rem 0.8rem; border: 1px solid #e5e5e5; background: #fff; border-radius: 6px; font-size: 0.75rem; color: #c0392b; cursor: pointer; font-family: inherit; }
+
+    /* MODE SELECTOR */
+    .mode-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
+    .mode-btn { padding: 0.8rem 0.6rem; border-radius: 12px; border: 2px solid #e5e5e5; background: #fff; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .mode-btn.selected { border-color: #1a1a1a; background: #1a1a1a; color: #fff; }
+    .mode-btn .mode-emoji { font-size: 1.4rem; display: block; margin-bottom: 0.2rem; }
+    .mode-btn .mode-name { font-size: 0.8rem; font-weight: 600; }
+    .mode-btn .mode-desc { font-size: 0.6rem; opacity: 0.7; margin-top: 0.1rem; }
+
+    /* STYLES */
+    .styles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.4rem; }
+    .style-card { padding: 0.6rem 0.7rem; border-radius: 8px; border: 1px solid #e5e5e5; background: #fafafa; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; }
+    .style-card.selected { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+    .style-card .style-emoji { font-size: 1rem; }
+    .style-card .style-name { font-size: 0.72rem; font-weight: 500; line-height: 1.1; }
+    .style-card .style-desc { font-size: 0.58rem; opacity: 0.65; }
+    .style-category-header { grid-column: 1 / -1; font-size: 0.65rem; font-weight: 600; color: #777; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.5rem 0 0.2rem; border-bottom: 1px solid #e5e5e5; margin-bottom: 0.2rem; }
+    .no-style-card { grid-column: 1 / -1; padding: 0.7rem 1rem; border-radius: 8px; border: 2px dashed #e5e5e5; text-align: center; cursor: pointer; font-size: 0.78rem; color: #777; }
+    .no-style-card.selected { border-color: #1a1a1a; border-style: solid; background: #f5f5f5; color: #1a1a1a; font-weight: 600; }
+
+    /* DURÉE */
+    .duration-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
+    .duration-btn { padding: 0.7rem 0.4rem; border-radius: 8px; border: 1px solid #e5e5e5; background: #fafafa; cursor: pointer; text-align: center; font-family: inherit; font-size: 0.8rem; font-weight: 600; color: #1a1a1a; }
+    .duration-btn.selected { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+    .duration-btn .duration-label { display: block; font-size: 0.6rem; font-weight: 400; opacity: 0.7; margin-top: 0.1rem; }
+
+    button.primary { width: 100%; padding: 1rem; border: none; border-radius: 12px; background: #1a1a1a; color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer; font-family: inherit; margin-bottom: 1rem; }
+    button.primary:disabled { opacity: 0.3; cursor: not-allowed; }
+    button.stop { width: 100%; padding: 0.8rem; border: 1px solid #e5e5e5; border-radius: 12px; background: #fff; color: #c0392b; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; margin-bottom: 1rem; display: none; }
+    button.stop.visible { display: block; }
+    .queue { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; display: none; }
+    .queue.visible { display: block; }
+    .timer { font-size: 2rem; font-weight: 600; text-align: center; font-family: ui-monospace, monospace; margin-bottom: 0.3rem; }
+    .timer-label { font-size: 0.72rem; color: #777; text-align: center; text-transform: uppercase; letter-spacing: 0.06em; }
+    .progress-bar { width: 100%; height: 6px; background: #f5f5f5; border-radius: 3px; overflow: hidden; margin-top: 0.8rem; }
+    .progress-bar .fill { height: 100%; background: #7c3aed; transition: width 0.3s; width: 0%; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
+    .gallery-item { border-radius: 8px; overflow: hidden; border: 1px solid #e5e5e5; background: #000; position: relative; }
+    .gallery-item video { width: 100%; display: block; aspect-ratio: 9/16; object-fit: cover; }
+    .gallery-item .actions { padding: 0.4rem; background: #fff; display: flex; gap: 0.4rem; justify-content: space-between; align-items: center; }
+    .gallery-item a, .gallery-item button { font-size: 0.7rem; text-decoration: none; padding: 0.25rem 0.5rem; border-radius: 4px; font-family: inherit; cursor: pointer; border: none; }
+    .gallery-item a { background: #2d8a4e; color: #fff; }
+    .gallery-item button { background: #c0392b; color: #fff; }
+    .empty { text-align: center; padding: 2rem; color: #777; font-size: 0.85rem; }
+    .toast { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%) translateY(-100px); background: #1a1a1a; color: #fff; padding: 0.8rem 1.2rem; border-radius: 8px; font-size: 0.85rem; z-index: 1000; opacity: 0; transition: all 0.3s; max-width: 90vw; text-align: center; }
+    .toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.error { background: #c0392b; }
+    .toast.success { background: #2d8a4e; }
+    .toast.warn { background: #d4a017; }
+    .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<h1>Vidéo IA</h1>
+<p class="sub">Image ou Texte → Style → Créer</p>
+
+<div class="card">
+    <label>Clé API Agnes (sk-...)</label>
+    <input type="password" id="api-key" placeholder="sk-..." autocomplete="off">
+    <div style="margin-top: 0.5rem; font-size: 0.72rem; color: #777;">
+        Clé gratuite sur <a href="https://platform.agnes-ai.com" target="_blank">platform.agnes-ai.com</a>
+    </div>
+    <div style="margin-top: 0.5rem; font-size: 0.75rem;" id="api-status">Aucune clé enregistrée</div>
+</div>
+
+<!-- MODE SELECTOR -->
+<div class="mode-selector">
+    <div class="mode-btn selected" id="mode-btn-image" data-mode="image">
+        <span class="mode-emoji">🖼️</span>
+        <div class="mode-name">Image</div>
+        <div class="mode-desc">Animer une photo</div>
+    </div>
+    <div class="mode-btn" id="mode-btn-text" data-mode="text">
+        <span class="mode-emoji">✍️</span>
+        <div class="mode-name">Texte</div>
+        <div class="mode-desc">Créer de zéro</div>
+    </div>
+</div>
+
+<!-- IMAGE MODE -->
+<div id="section-image">
+    <div class="card">
+        <label>Image de départ</label>
+        <div class="upload" id="upload-zone">
+            <input type="file" id="file-input" accept="image/*">
+            <div class="upload-icon">＋</div>
+            <div class="upload-text">Appuyez pour choisir une image</div>
+            <div class="upload-hint">Portrait ou paysage, jpg/png</div>
+        </div>
+        <div class="preview" id="preview" style="display:none;"></div>
+    </div>
+</div>
+
+<!-- TEXT MODE -->
+<div id="section-text" class="hidden">
+    <div class="card">
+        <label>Description de la scène</label>
+        <textarea id="text-description" placeholder="Exemple : A beautiful young woman sitting at a modern office desk, wearing a classic white button-up shirt fully buttoned, collar button closed, neck fully covered, dark blazer, glasses, professional atmosphere."></textarea>
+    </div>
+</div>
+
+<!-- PROMPT -->
+<div class="card">
+    <label>Prompt (mouvement / direction artistique)</label>
+    <textarea id="prompt" placeholder="Exemple : Subtle breathing, slight head movement, she touches her collar. Static camera, slight push-in."></textarea>
+</div>
+
+<!-- STYLE -->
+<div class="card">
+    <label>Style visuel</label>
+    <div class="styles-grid" id="styles-grid"></div>
+</div>
+
+<!-- DURÉE -->
+<div class="card">
+    <label>Durée de la vidéo</label>
+    <div class="duration-row" id="duration-row">
+        <button class="duration-btn" data-frames="121" data-label="5s">5 s<span class="duration-label">rapide</span></button>
+        <button class="duration-btn selected" data-frames="157" data-label="6,5s">6,5 s<span class="duration-label">recommandé</span></button>
+        <button class="duration-btn" data-frames="241" data-label="10s">10 s<span class="duration-label">maximum</span></button>
+    </div>
+</div>
+
+<button class="primary" id="generate-btn" disabled>🎬 Créer la vidéo</button>
+<button class="stop" id="stop-btn">⏹ Arrêter</button>
+
+<div class="queue" id="queue">
+    <div class="timer" id="timer">00:00</div>
+    <div class="timer-label" id="timer-label">Préparation…</div>
+    <div class="progress-bar"><div class="fill" id="progress-fill"></div></div>
+</div>
+
+<div class="card">
+    <label>Vidéos générées</label>
+    <div class="gallery" id="gallery"></div>
+    <div class="empty" id="gallery-empty">Aucune vidéo pour le moment.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = 'https://apihub.agnes-ai.com/v1';
+const POLL_BASE = 'https://apihub.agnes-ai.com/agnesapi';
+const MODEL = 'agnes-video-v2.0';
+const FRAME_RATE = 24;
+const POLL_INTERVAL = 8;
+const MAX_ATTEMPTS = 40;
+const TIMEOUT_SEC = 300;
+const API_KEY_KEY = 'agnes_key_simple';
+
+// ══════════════════════════════════════════════════════════════════
+// STYLES
+// ══════════════════════════════════════════════════════════════════
+const STYLES = {
+    realiste: [
+        { id: 'realiste-hollywood', name: 'Hollywood', emoji: '🎬', desc: 'Blockbuster pro', prompt: 'Hollywood blockbuster cinematic look, professional film lighting, shallow depth of field, 35mm film grain, photorealistic, 8k.' },
+        { id: 'realiste-portrait', name: 'Portrait photo', emoji: '📸', desc: 'Studio pro', prompt: 'professional studio portrait photography, soft Rembrandt lighting, 85mm lens, shallow depth of field, photorealistic, ultra detailed, 8k.' },
+        { id: 'realiste-cinema', name: 'Cinéma', emoji: '🎥', desc: 'Film cinéma', prompt: 'cinematic film look, anamorphic lens, dramatic lighting, rich color grading, 35mm film grain, photorealistic.' }
+    ],
+    anime: [
+        { id: 'anime-ghibli', name: 'Studio Ghibli', emoji: '🌿', desc: 'Nature, douceur', prompt: 'Studio Ghibli anime style, Hayao Miyazaki aesthetic, hand-painted watercolor backgrounds, cel-shaded characters, warm soft lighting.' },
+        { id: 'anime-cel90', name: 'Anime 90s', emoji: '📺', desc: 'Classique japonais', prompt: 'classic 1990s Japanese cel animation, bold black outlines, flat vibrant colors, subtle VHS grain.' },
+        { id: 'anime-manga', name: 'Manga N&B', emoji: '🖤', desc: 'Encre, contraste', prompt: 'black and white Japanese manga style, stark ink outlines, dramatic screentones, high contrast.' },
+        { id: 'anime-shonen', name: 'Shonen', emoji: '⚡', desc: 'Action, énergie', prompt: 'shonen anime style, dynamic action lines, strong contrast, energetic composition.' },
+        { id: 'anime-shojo', name: 'Shojo', emoji: '🌸', desc: 'Romantique', prompt: 'shojo anime style, soft pastel colors, sparkling highlights, flower petals, dreamy.' }
+    ],
+    documentaire: [
+        { id: 'doc-nature', name: 'Nature', emoji: '🌿', desc: 'BBC Earth', prompt: 'nature documentary cinematography, ultra sharp, golden hour, BBC Earth style, wide landscape shots.' },
+        { id: 'doc-urbain', name: 'Urbain', emoji: '🏙️', desc: 'Ville, reportage', prompt: 'urban documentary, handheld camera, natural light, authentic street photography style.' },
+        { id: 'doc-portrait', name: 'Portrait', emoji: '👤', desc: 'Interview', prompt: 'portrait documentary, interview style, soft window light, shallow depth of field.' }
+    ],
+    cartoon: [
+        { id: 'cartoon-simpson', name: 'Les Simpson', emoji: '🍩', desc: 'Peau jaune', prompt: 'The Simpsons cartoon style, yellow-skinned characters, thick black outlines, flat saturated colors, Matt Groening style.' },
+        { id: 'cartoon-pixar', name: 'Pixar 3D', emoji: '✨', desc: 'Rendu 3D', prompt: 'Pixar 3D animation style, high-quality 3D rendering, expressive characters, subsurface scattering.' },
+        { id: 'cartoon-disney', name: 'Disney', emoji: '🏰', desc: 'Animation 2D', prompt: 'classic Disney 2D animation style, expressive characters, watercolor backgrounds, magical atmosphere.' },
+        { id: 'cartoon-rick', name: 'Rick & Morty', emoji: '🧪', desc: 'Sci-fi cartoon', prompt: 'Rick and Morty cartoon style, wobbly lines, flat colors, sci-fi chaos.' }
+    ],
+    ambiance: [
+        { id: 'amb-golden', name: 'Golden Hour', emoji: '🌅', desc: 'Lumière dorée', prompt: 'golden hour warm sunlight, soft amber glow, long shadows, luminous atmosphere.' },
+        { id: 'amb-night', name: 'Nuit', emoji: '🌙', desc: 'Ambiance nocturne', prompt: 'night atmosphere, cool moonlight, blue and silver tones, peaceful mood.' },
+        { id: 'amb-misty', name: 'Brume', emoji: '🌫️', desc: 'Mystérieux', prompt: 'atmospheric mist, soft haze, diffused glowing light, mystical fog.' },
+        { id: 'amb-neon', name: 'Néon', emoji: '🌆', desc: 'Reflets colorés', prompt: 'neon-soaked atmosphere, colorful reflections, magenta and cyan accents.' }
+    ]
+};
+
+// ══════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════
+let currentImage = null;
+let selectedStyle = null;
+let mode = 'image';
+let numFrames = 157;
+let isRunning = false;
+let stopRequested = false;
+let timerInterval = null;
+let startTime = null;
+
+// ══════════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════════
+function toast(msg, type = 'success', duration = 2500) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast visible ' + type;
+    setTimeout(() => el.className = 'toast ' + type, duration);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// API KEY
+// ══════════════════════════════════════════════════════════════════
+function getKey() { return (localStorage.getItem(API_KEY_KEY) || '').trim(); }
+function saveKey() {
+    const val = document.getElementById('api-key').value.trim();
+    if (!val) { localStorage.removeItem(API_KEY_KEY); updateApiStatus(); toast('Clé supprimée', 'warn'); return; }
+    localStorage.setItem(API_KEY_KEY, val);
+    updateApiStatus();
+    toast('Clé enregistrée ✓', 'success');
+}
+function updateApiStatus() {
+    const key = getKey();
+    const el = document.getElementById('api-status');
+    if (key) {
+        el.textContent = '✓ Clé active · ' + key.slice(0, 8) + '…' + key.slice(-4);
+        el.style.color = '#2d8a4e';
+        document.getElementById('api-key').value = key;
+    } else {
+        el.textContent = 'Aucune clé enregistrée';
+        el.style.color = '#777';
+        document.getElementById('api-key').value = '';
+    }
+    updateBtn();
+}
+document.getElementById('api-key').addEventListener('blur', saveKey);
+document.getElementById('api-key').addEventListener('keydown', e => { if (e.key === 'Enter') saveKey(); });
+
+// ══════════════════════════════════════════════════════════════════
+// MODE
+// ══════════════════════════════════════════════════════════════════
+document.getElementById('mode-btn-image').addEventListener('click', () => setMode('image'));
+document.getElementById('mode-btn-text').addEventListener('click', () => setMode('text'));
+function setMode(m) {
+    mode = m;
+    document.getElementById('mode-btn-image').classList.toggle('selected', m === 'image');
+    document.getElementById('mode-btn-text').classList.toggle('selected', m === 'text');
+    document.getElementById('section-image').classList.toggle('hidden', m !== 'image');
+    document.getElementById('section-text').classList.toggle('hidden', m !== 'text');
+    updateBtn();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UPLOAD
+// ══════════════════════════════════════════════════════════════════
+document.getElementById('upload-zone').addEventListener('click', () => document.getElementById('file-input').click());
+document.getElementById('file-input').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast('Fichier non supporté', 'error'); return; }
+    const dataUri = await new Promise(r => {
+        const rd = new FileReader();
+        rd.onload = ev => r(ev.target.result);
+        rd.readAsDataURL(file);
+    });
+    currentImage = dataUri;
+    showPreview();
+    document.getElementById('file-input').value = '';
+    updateBtn();
+});
+
+function showPreview() {
+    const p = document.getElementById('preview');
+    if (!currentImage) { p.style.display = 'none'; return; }
+    p.style.display = 'block';
+    p.innerHTML = '<img src="' + currentImage + '"><button id="clear-img">✕ Supprimer l\'image</button>';
+    document.getElementById('clear-img').addEventListener('click', () => {
+        currentImage = null;
+        showPreview();
+        updateBtn();
+    });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// STYLES UI
+// ══════════════════════════════════════════════════════════════════
+function renderStyles() {
+    const container = document.getElementById('styles-grid');
+    let html = '';
+    html += '<div class="no-style-card ' + (selectedStyle === null ? 'selected' : '') + '" data-style="none">' +
+        (selectedStyle === null ? '✓ Aucun style (garde l\'image telle quelle)' : '🚫 Aucun style') +
+        '</div>';
+    const categories = { realiste: '📸 Réaliste', anime: '🎌 Anime', documentaire: '📹 Documentaire', cartoon: '🍩 Cartoon', ambiance: '✨ Ambiance' };
+    for (const [key, label] of Object.entries(categories)) {
+        html += '<div class="style-category-header">' + label + '</div>';
+        html += STYLES[key].map(s =>
+            '<div class="style-card ' + (selectedStyle === s.id ? 'selected' : '') + '" data-style="' + s.id + '">' +
+            '<div class="style-emoji">' + s.emoji + '</div>' +
+            '<div><div class="style-name">' + s.name + '</div>' +
+            '<div class="style-desc">' + s.desc + '</div></div></div>'
+        ).join('');
+    }
+    container.innerHTML = html;
+    container.querySelectorAll('[data-style]').forEach(el => {
+        el.addEventListener('click', () => {
+            const val = el.dataset.style;
+            selectedStyle = (val === 'none') ? null : val;
+            renderStyles();
+        });
+    });
+}
+
+function getStylePrompt() {
+    if (!selectedStyle) return '';
+    for (const cat of Object.values(STYLES)) {
+        const found = cat.find(s => s.id === selectedStyle);
+        if (found) return found.prompt;
+    }
+    return '';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DURÉE
+// ══════════════════════════════════════════════════════════════════
+document.querySelectorAll('#duration-row .duration-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#duration-row .duration-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        numFrames = parseInt(btn.dataset.frames, 10);
+    });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// BUTTON
+// ══════════════════════════════════════════════════════════════════
+document.getElementById('prompt').addEventListener('input', updateBtn);
+document.getElementById('text-description').addEventListener('input', updateBtn);
+
+function updateBtn() {
+    const btn = document.getElementById('generate-btn');
+    const hasKey = !!getKey();
+    let canRun = false;
+    if (mode === 'image') canRun = !!currentImage;
+    else {
+        const desc = document.getElementById('text-description').value.trim();
+        canRun = desc.length > 0;
+    }
+    btn.disabled = !hasKey || !canRun || isRunning;
+    if (isRunning) btn.textContent = '⏳ Création en cours…';
+    else btn.textContent = '🎬 Créer la vidéo';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════════════════════════════
+function startTimer() {
+    startTime = Date.now();
+    const timerEl = document.getElementById('timer');
+    const labelEl = document.getElementById('timer-label');
+    const fillEl = document.getElementById('progress-fill');
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const s = String(elapsed % 60).padStart(2, '0');
+        timerEl.textContent = m + ':' + s;
+        labelEl.textContent = 'Génération en cours… / 5 minutes max';
+        const pct = Math.min(100, (elapsed / TIMEOUT_SEC) * 100);
+        fillEl.style.width = pct + '%';
+        if (pct > 75) fillEl.style.background = '#d4a017';
+        if (pct > 90) fillEl.style.background = '#c0392b';
+    }, 1000);
+}
+function stopTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// API
+// ══════════════════════════════════════════════════════════════════
+async function apiFetch(url, opts = {}) {
+    for (let i = 0; i < 7; i++) {
+        if (stopRequested) throw new Error('Arrêt');
+        try {
+            const res = await fetch(url, opts);
+            if (res.status === 429) { await sleep([15, 30, 45, 60, 90][i] * 1000); continue; }
+            if (res.status === 503) { await sleep([5, 10, 15, 20, 30][i] * 1000); continue; }
+            return res;
+        } catch (e) {
+            if (e.message === 'Arrêt') throw e;
+            await sleep([3, 5, 8, 12, 20][i] * 1000);
+        }
+    }
+    return fetch(url, opts);
+}
+
+async function createTask() {
+    let prompt = document.getElementById('prompt').value.trim();
+    const stylePrompt = getStylePrompt();
+    if (stylePrompt) prompt = (prompt ? prompt + '. ' : '') + stylePrompt;
+    if (!prompt) prompt = 'Subtle movement, breathing, slight head movement.';
+
+    const body = { model: MODEL, prompt: prompt, num_frames: numFrames, frame_rate: FRAME_RATE };
+    if (mode === 'image' && currentImage) {
+        body.image = currentImage;
+    } else if (mode === 'text') {
+        const desc = document.getElementById('text-description').value.trim();
+        body.prompt = desc + '. ' + prompt;
+    }
+    const res = await apiFetch(API_BASE + '/videos', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + getKey(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+        const err = await res.text();
+        throw new Error('HTTP ' + res.status + ' — ' + err.slice(0, 150));
+    }
+    const data = await res.json();
+    const id = data.video_id || data.id || data.task_id;
+    if (!id) throw new Error('Pas d\'ID retourné');
+    return id;
+}
+
+async function pollTask(videoId) {
+    await sleep(20000);
+    for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        if (stopRequested) throw new Error('Arrêt');
+        const url = POLL_BASE + '?video_id=' + encodeURIComponent(videoId) + '&model_name=' + encodeURIComponent(MODEL);
+        const res = await apiFetch(url, { headers: { 'Authorization': 'Bearer ' + getKey() } });
+        const d = await res.json();
+        if (d.status === 'completed' || d.status === 'succeeded' || d.status === 'done') {
+            const videoUrl = (d.metadata && d.metadata.url) || d.url || (d.output && d.output.url);
+            if (!videoUrl) throw new Error('Pas d\'URL dans la réponse');
+            return videoUrl;
+        }
+        if (d.status === 'failed' || d.status === 'error') throw new Error('Échec de génération');
+        await sleep(POLL_INTERVAL * 1000);
+    }
+    throw new Error('Timeout 5 minutes');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showQueue() { document.getElementById('queue').classList.add('visible'); }
+function hideQueue() {
+    document.getElementById('queue').classList.remove('visible');
+    stopTimer();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GENERATE
+// ══════════════════════════════════════════════════════════════════
+async function generate() {
+    if (isRunning) return;
+    if (!getKey()) { toast('Clé API requise', 'error'); return; }
+    if (mode === 'image' && !currentImage) { toast('Ajoutez une image', 'error'); return; }
+    if (mode === 'text' && !document.getElementById('text-description').value.trim()) { toast('Écrivez une description', 'error'); return; }
+
+    isRunning = true;
+    stopRequested = false;
+    updateBtn();
+    document.getElementById('stop-btn').classList.add('visible');
+    showQueue();
+    startTimer();
+
+    try {
+        document.getElementById('timer-label').textContent = 'Préparation de la tâche…';
+        const videoId = await createTask();
+        document.getElementById('timer-label').textContent = 'Tâche créée, génération en cours…';
+        const videoUrl = await pollTask(videoId);
+        hideQueue();
+        addToGallery(videoUrl);
+        toast('Vidéo créée ✓', 'success', 3000);
+    } catch (e) {
+        hideQueue();
+        if (e.message === 'Arrêt') toast('Arrêté', 'warn');
+        else toast('Erreur : ' + e.message, 'error', 4000);
+    }
+
+    isRunning = false;
+    stopRequested = false;
+    document.getElementById('stop-btn').classList.remove('visible');
+    updateBtn();
+}
+
+document.getElementById('generate-btn').addEventListener('click', generate);
+document.getElementById('stop-btn').addEventListener('click', () => { stopRequested = true; });
+
+// ══════════════════════════════════════════════════════════════════
+// GALLERY
+// ══════════════════════════════════════════════════════════════════
+const gallery = [];
+function addToGallery(url) {
+    gallery.unshift(url);
+    renderGallery();
+}
+function renderGallery() {
+    const g = document.getElementById('gallery');
+    const empty = document.getElementById('gallery-empty');
+    if (!gallery.length) { g.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    g.innerHTML = gallery.map((url, i) =>
+        '<div class="gallery-item">' +
+            '<video controls preload="metadata" playsinline muted><source src="' + url + '" type="video/mp4"></video>' +
+            '<div class="actions">' +
+                '<a href="' + url + '" download="video-' + (i + 1) + '.mp4" target="_blank">⬇</a>' +
+                '<button data-i="' + i + '">✕</button>' +
+            '</div>' +
+        '</div>'
+    ).join('');
+    g.querySelectorAll('button[data-i]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            gallery.splice(parseInt(btn.dataset.i, 10), 1);
+            renderGallery();
+        });
+    });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+updateApiStatus();
+updateBtn();
+renderStyles();
+renderGallery();
+</script>
+
+</body>
+</html>
